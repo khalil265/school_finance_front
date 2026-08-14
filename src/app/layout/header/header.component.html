@@ -1,0 +1,59 @@
+<header class="topbar">
+
+    <div class="title-zone">
+
+        <h1>
+            School Finance
+        </h1>
+
+        <p>
+            Gestion financière et comptable
+        </p>
+
+    </div>
+
+
+    <div class="right-zone">
+
+        <div class="status">
+
+            <span class="status-dot"></span>
+
+            Session active
+
+        </div>
+
+
+        <div class="separator"></div>
+
+
+        <div class="avatar">
+            {{ initials }}
+        </div>
+
+
+        <div class="user">
+
+            <strong>
+                {{ currentUser()?.username || 'Utilisateur' }}
+            </strong>
+
+            <span>
+                {{ primaryRole }}
+            </span>
+
+        </div>
+
+
+        <button
+            type="button"
+            class="logout"
+            (click)="logout()">
+
+            Déconnexion
+
+        </button>
+
+    </div>
+
+</header>

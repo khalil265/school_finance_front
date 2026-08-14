@@ -1,0 +1,185 @@
+.login-page {
+    min-height: 100vh;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 30px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #101828,
+            #1d2939
+        );
+}
+
+.login-panel {
+    width: 100%;
+    max-width: 430px;
+
+    background: #ffffff;
+
+    border-radius: 18px;
+
+    padding: 36px;
+
+    box-shadow:
+        0 20px 60px
+        rgba(0, 0, 0, 0.25);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+
+    gap: 13px;
+
+    margin-bottom: 36px;
+}
+
+.logo {
+    width: 48px;
+    height: 48px;
+
+    border-radius: 12px;
+
+    background: #172033;
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-weight: 800;
+}
+
+.brand h1 {
+    margin: 0;
+
+    font-size: 19px;
+    color: #101828;
+}
+
+.brand p {
+    margin: 3px 0 0;
+
+    font-size: 11px;
+    color: #667085;
+}
+
+.welcome {
+    margin-bottom: 25px;
+}
+
+.welcome h2 {
+    margin: 0;
+
+    font-size: 25px;
+    color: #101828;
+}
+
+.welcome p {
+    margin: 7px 0 0;
+
+    color: #667085;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.field {
+    margin-bottom: 18px;
+}
+
+.field label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #344054;
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.field input {
+    width: 100%;
+
+    padding: 12px 13px;
+
+    border: 1px solid #d0d5dd;
+
+    border-radius: 8px;
+
+    outline: none;
+
+    transition: 0.2s;
+}
+
+.field input:focus {
+    border-color: #475467;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(71, 84, 103, 0.1);
+}
+
+.field small {
+    display: block;
+
+    margin-top: 6px;
+
+    color: #d92d20;
+
+    font-size: 11px;
+}
+
+button {
+    width: 100%;
+
+    border: 0;
+
+    border-radius: 8px;
+
+    padding: 13px;
+
+    background: #172033;
+    color: white;
+
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+    background: #25324a;
+}
+
+button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.error {
+    margin-bottom: 18px;
+
+    padding: 11px 12px;
+
+    border-radius: 8px;
+
+    background: #fef3f2;
+    color: #b42318;
+
+    font-size: 12px;
+}
+
+.footer {
+    margin-top: 28px;
+
+    text-align: center;
+
+    color: #98a2b3;
+
+    font-size: 10px;
+}

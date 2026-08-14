@@ -1,0 +1,121 @@
+<div class="login-page">
+
+    <div class="login-panel">
+
+        <div class="brand">
+
+            <div class="logo">
+                SF
+            </div>
+
+            <div>
+                <h1>School Finance</h1>
+                <p>Gestion financière scolaire</p>
+            </div>
+
+        </div>
+
+
+        <div class="welcome">
+
+            <h2>Connexion</h2>
+
+            <p>
+                Connectez-vous pour accéder à votre espace
+                de gestion.
+            </p>
+
+        </div>
+
+
+        <div
+            *ngIf="errorMessage"
+            class="error">
+
+            {{ errorMessage }}
+
+        </div>
+
+
+        <form
+            [formGroup]="form"
+            (ngSubmit)="login()">
+
+
+            <div class="field">
+
+                <label for="username">
+                    Nom utilisateur
+                </label>
+
+                <input
+                    id="username"
+                    type="text"
+                    formControlName="username"
+                    autocomplete="username"
+                    placeholder="Votre nom utilisateur">
+
+                <small
+                    *ngIf="
+                        form.controls.username.touched &&
+                        form.controls.username.invalid
+                    ">
+
+                    Le nom utilisateur est obligatoire.
+
+                </small>
+
+            </div>
+
+
+            <div class="field">
+
+                <label for="password">
+                    Mot de passe
+                </label>
+
+                <input
+                    id="password"
+                    type="password"
+                    formControlName="password"
+                    autocomplete="current-password"
+                    placeholder="Votre mot de passe">
+
+                <small
+                    *ngIf="
+                        form.controls.password.touched &&
+                        form.controls.password.invalid
+                    ">
+
+                    Le mot de passe doit contenir
+                    au minimum 8 caractères.
+
+                </small>
+
+            </div>
+
+
+            <button
+                type="submit"
+                [disabled]="loading">
+
+                <span *ngIf="!loading">
+                    Se connecter
+                </span>
+
+                <span *ngIf="loading">
+                    Connexion...
+                </span>
+
+            </button>
+
+        </form>
+
+
+        <div class="footer">
+            School Finance — Administration financière
+        </div>
+
+    </div>
+
+</div>

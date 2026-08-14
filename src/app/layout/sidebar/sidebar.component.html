@@ -1,0 +1,72 @@
+<aside class="sidebar">
+
+    <div class="brand">
+
+        <div class="brand-icon">
+            SF
+        </div>
+
+        <div>
+
+            <div class="brand-title">
+                School Finance
+            </div>
+
+            <div class="brand-subtitle">
+                Gestion financière
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <nav class="menu">
+
+        <ng-container
+            *ngFor="
+                let item of menuItems();
+                let i = index
+            ">
+
+            <div
+                *ngIf="showSection(i)"
+                class="menu-section">
+
+                {{ item.section }}
+
+            </div>
+
+
+            <a
+                [routerLink]="item.route"
+                routerLinkActive="active">
+
+                <span class="menu-icon">
+                    {{ item.icon }}
+                </span>
+
+                <span class="menu-label">
+                    {{ item.label }}
+                </span>
+
+            </a>
+
+        </ng-container>
+
+    </nav>
+
+
+    <div class="sidebar-footer">
+
+        <span>
+            School Finance
+        </span>
+
+        <small>
+            Administration financière
+        </small>
+
+    </div>
+
+</aside>
