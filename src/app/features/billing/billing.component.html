@@ -1,17 +1,178 @@
-<section class="page">
+<div class="billing-page">
 
-    <div class="page-header">
-        <div>
-            <h2>Facturation</h2>
-            <p>Gestion des frais, échéances et factures scolaires</p>
-        </div>
+  <div class="header-row">
+
+    <div>
+      <h1>Facturation</h1>
+      <p class="subtitle">Gestion des frais, echeances et factures scolaires</p>
     </div>
 
-    <div class="card">
-        <h3>Module Facturation</h3>
-        <p>
-            Le module est prêt à être connecté à l'API School Finance.
+    <div class="year-select">
+      <label for="academicYear">Annee academique</label>
+      <select
+        id="academicYear"
+        [(ngModel)]="selectedAcademicYearId"
+        (ngModelChange)="onAcademicYearChange()"
+        [disabled]="loadingYears">
+        <option
+          *ngFor="let year of academicYears"
+          [value]="year.id">
+          {{ year.label }}
+        </option>
+      </select>
+    </div>
+
+  </div>
+
+  <div class="error-banner" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="search-card">
+
+    <label for="studentSearch">Rechercher un eleve</label>
+
+    <div class="search-row">
+      <input
+        id="studentSearch"
+        type="text"
+        placeholder="Nom, prenom ou matricule..."
+        [(ngModel)]="searchQuery"
+        (keyup.enter)="searchStudents()" />
+
+      <button
+        type="button"
+        (click)="searchStudents()"
+        [disabled]="searching">
+        {{ searching ? 'Recherche...' : 'Rechercher' }}
+      </button>
+    </div>
+
+    <ul class="search-results" *ngIf="searchResults.length > 0">
+      <li
+        *ngFor="let student of searchResults"
+        (click)="selectStudent(student)">
+        <strong>{{ student.lastName }} {{ student.firstName }}</strong>
+        <span>{{ student.registrationNumber }}</span>
+      </li>
+    </ul>
+
+  </div>
+
+  <div class="student-card" *ngIf="selectedStudent">
+
+    <div class="student-header">
+      <div>
+        <h2>{{ selectedStudent.lastName }} {{ selectedStudent.firstName }}</h2>
+        <p>{{ selectedStudent.registrationNumber }}</p>
+
+        <p class="enrollment-info" *ngIf="currentEnrollment">
+          Inscrit en {{ currentEnrollment.schoolClass }} ({{ currentEnrollment.level }})
         </p>
+
+        <p class="enrollment-warning" *ngIf="!loadingEnrollments && !currentEnrollment">
+          Aucune inscription active pour cette annee academique.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        (click)="refreshSummary()"
+        [disabled]="refreshing || !summary">
+        {{ refreshing ? 'Actualisation...' : 'Actualiser' }}
+      </button>
     </div>
 
-</section>
+    <div class="loading" *ngIf="loadingSummary">
+      Chargement du resume financier...
+    </div>
+
+    <div class="summary-grid" *ngIf="summary && !loadingSummary">
+
+      <div class="summary-box">
+        <span class="label">Total facture</span>
+        <span class="value">{{ summary.totalCharged | number: '1.0-0' }} XOF</span>
+      </div>
+
+      <div class="summary-box">
+        <span class="label">Total paye</span>
+        <span class="value paid">{{ summary.totalPaid | number: '1.0-0' }} XOF</span>
+      </div>
+
+      <div class="summary-box">
+        <span class="label">Remise</span>
+        <span class="value">{{ summary.totalDiscount | number: '1.0-0' }} XOF</span>
+      </div>
+
+      <div class="summary-box">
+        <span class="label">Solde</span>
+        <span
+          class="value"
+          [class.balance-due]="summary.balance > 0">
+          {{ summary.balance | number: '1.0-0' }} XOF
+        </span>
+      </div>
+
+      <div class="summary-box">
+        <span class="label">Statut</span>
+        <span class="status-badge" [attr.data-status]="summary.status">
+          {{ statusLabel(summary.status) }}
+        </span>
+      </div>
+
+    </div>
+
+    <table class="charges-table" *ngIf="summary && summary.charges.length > 0">
+      <thead>
+        <tr>
+          <th>Frais</th>
+          <th>Echeance</th>
+          <th>Montant</th>
+          <th>Paye</th>
+          <th>Restant</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let charge of summary.charges">
+          <td>{{ charge.label }}</td>
+          <td>{{ charge.dueDate }}</td>
+          <td>{{ charge.amount | number: '1.0-0' }}</td>
+          <td>{{ charge.paidAmount | number: '1.0-0' }}</td>
+          <td>{{ charge.remainingAmount | number: '1.0-0' }}</td>
+          <td>
+            <span class="status-badge" [attr.data-status]="charge.status">
+              {{ statusLabel(charge.status) }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="generate-panel">
+
+      <h3>Generer un echeancier</h3>
+
+      <p class="generate-hint" *ngIf="currentEnrollment">
+        Sera genere pour l'inscription en {{ currentEnrollment.schoolClass }}.
+      </p>
+
+      <button
+        type="button"
+        (click)="generateSchedule()"
+        [disabled]="generating || !currentEnrollment">
+        {{ generating ? 'Generation...' : 'Generer l\'echeancier' }}
+      </button>
+
+      <p class="generate-error" *ngIf="generateError">{{ generateError }}</p>
+      <p class="generate-success" *ngIf="generateSuccess">{{ generateSuccess }}</p>
+
+    </div>
+
+  </div>
+
+  <div class="empty-state" *ngIf="!selectedStudent">
+    Recherchez un eleve ci-dessus pour consulter ou generer sa facturation.
+  </div>
+
+</div>

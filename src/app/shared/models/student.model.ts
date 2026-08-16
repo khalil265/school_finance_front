@@ -120,3 +120,29 @@ export interface StudentPage {
 
   numberOfElements: number;
 }
+
+
+export interface Enrollment {
+
+  id: string;
+
+  studentId: string;
+
+  studentRegistrationNumber: string;
+
+  academicYearId: string;
+
+  academicYear: string;
+
+  schoolClassId: string;
+
+  schoolClass: string;
+
+  level: string;
+
+  enrollmentDate: string;
+
+  status: string;
+
+  notes: string | null;
+}

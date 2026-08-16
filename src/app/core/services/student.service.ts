@@ -14,6 +14,7 @@ import {
 } from '../../../environments/environment';
 
 import {
+  Enrollment,
   Student,
   StudentCreateRequest,
   StudentPage,
@@ -107,6 +108,16 @@ export class StudentService {
     return this.http.put<Student>(
       `${this.apiUrl}/${id}`,
       request
+    );
+  }
+
+
+  getEnrollments(
+    studentId: string
+  ): Observable<Enrollment[]> {
+
+    return this.http.get<Enrollment[]>(
+      `${this.apiUrl}/${studentId}/enrollments`
     );
   }
 }
