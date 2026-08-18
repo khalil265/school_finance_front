@@ -1,0 +1,258 @@
+<div class="security-page">
+
+  <div class="header-row">
+    <div>
+      <h1>Securite</h1>
+      <p class="subtitle">Gestion des utilisateurs, roles et permissions</p>
+    </div>
+  </div>
+
+  <div class="error-banner" *ngIf="errorMessage">{{ errorMessage }}</div>
+  <div class="success-banner" *ngIf="successMessage">{{ successMessage }}</div>
+
+  <div class="tabs">
+    <button type="button" class="tab" [class.active]="activeTab === 'users'" (click)="switchTab('users')">Utilisateurs</button>
+    <button type="button" class="tab" [class.active]="activeTab === 'roles'" (click)="switchTab('roles')">Roles &amp; Permissions</button>
+  </div>
+
+  <!-- UTILISATEURS -->
+  <div class="tab-panel" *ngIf="activeTab === 'users'">
+
+    <div class="panel-header">
+      <p>Comptes utilisateurs de l'application.</p>
+      <button type="button" (click)="openCreateUserForm()" *ngIf="canCreateUsers">Nouvel utilisateur</button>
+    </div>
+
+    <div class="form-card" *ngIf="userFormVisible">
+
+      <h3>{{ editingUser ? 'Modifier' : 'Creer' }} un utilisateur</h3>
+
+      <form [formGroup]="userForm" (ngSubmit)="submitUserForm()">
+
+        <div class="form-grid">
+
+          <div class="form-row">
+            <label for="username">Nom d'utilisateur</label>
+            <input id="username" type="text" formControlName="username" />
+          </div>
+
+          <div class="form-row">
+            <label for="email">Email</label>
+            <input id="email" type="email" formControlName="email" />
+          </div>
+
+          <div class="form-row">
+            <label for="firstName">Prenom</label>
+            <input id="firstName" type="text" formControlName="firstName" />
+          </div>
+
+          <div class="form-row">
+            <label for="lastName">Nom</label>
+            <input id="lastName" type="text" formControlName="lastName" />
+          </div>
+
+          <div class="form-row">
+            <label for="phone">Telephone</label>
+            <input id="phone" type="text" formControlName="phone" />
+          </div>
+
+          <div class="form-row" *ngIf="!editingUser">
+            <label for="password">Mot de passe</label>
+            <input id="password" type="password" formControlName="password" />
+          </div>
+
+        </div>
+
+        <div class="roles-select">
+          <label>Roles</label>
+          <div class="role-chips">
+            <label
+              class="role-chip"
+              *ngFor="let role of roles"
+              [class.selected]="selectedPermissionIds.has(role.id)">
+              <input
+                type="checkbox"
+                [checked]="selectedPermissionIds.has(role.id)"
+                (change)="toggleRoleForUser(role.id)" />
+              {{ role.name }}
+            </label>
+          </div>
+        </div>
+
+        <p class="form-error" *ngIf="formError">{{ formError }}</p>
+
+        <div class="form-actions">
+          <button type="button" class="secondary" (click)="closeUserForm()" [disabled]="saving">Annuler</button>
+          <button type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Enregistrer' }}</button>
+        </div>
+
+      </form>
+
+    </div>
+
+    <div class="form-card" *ngIf="passwordFormVisible">
+
+      <h3>Reinitialiser le mot de passe de {{ passwordTargetUser?.username }}</h3>
+
+      <div class="form-row">
+        <label for="newPassword">Nouveau mot de passe</label>
+        <input id="newPassword" type="password" [(ngModel)]="newPassword" [ngModelOptions]="{standalone: true}" />
+      </div>
+
+      <p class="form-error" *ngIf="formError">{{ formError }}</p>
+
+      <div class="form-actions">
+        <button type="button" class="secondary" (click)="closePasswordForm()" [disabled]="saving">Annuler</button>
+        <button type="button" (click)="submitPasswordForm()" [disabled]="saving">
+          {{ saving ? 'Enregistrement...' : 'Reinitialiser' }}
+        </button>
+      </div>
+
+    </div>
+
+    <div class="loading" *ngIf="loadingUsers">Chargement des utilisateurs...</div>
+
+    <table class="data-table" *ngIf="!loadingUsers && users.length > 0">
+      <thead>
+        <tr>
+          <th>Utilisateur</th>
+          <th>Nom complet</th>
+          <th>Email</th>
+          <th>Roles</th>
+          <th>Statut</th>
+          <th *ngIf="canManageUsers"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of users">
+          <td>{{ user.username }}</td>
+          <td>{{ user.firstName }} {{ user.lastName }}</td>
+          <td>{{ user.email ?? '-' }}</td>
+          <td>
+            <span class="role-badge" *ngFor="let r of user.roles">{{ r.name }}</span>
+          </td>
+          <td>
+            <span class="status-badge" [attr.data-status]="user.active ? 'ACTIVE' : 'INACTIVE'">
+              {{ user.active ? 'Actif' : 'Inactif' }}
+            </span>
+            <span class="status-badge" data-status="LOCKED" *ngIf="user.locked">Verrouille</span>
+          </td>
+          <td *ngIf="canManageUsers" class="actions-cell">
+            <button type="button" class="small secondary" (click)="openEditUserForm(user)">Modifier</button>
+            <button type="button" class="small secondary" (click)="toggleUserActive(user)">
+              {{ user.active ? 'Desactiver' : 'Activer' }}
+            </button>
+            <button type="button" class="small secondary" *ngIf="user.locked" (click)="unlockUser(user)">Deverrouiller</button>
+            <button type="button" class="small secondary" (click)="openPasswordForm(user)">Mot de passe</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty-state" *ngIf="!loadingUsers && users.length === 0">
+      Aucun utilisateur enregistre.
+    </div>
+
+  </div>
+
+  <!-- ROLES -->
+  <div class="tab-panel" *ngIf="activeTab === 'roles'">
+
+    <div class="panel-header">
+      <p>Roles et permissions associees.</p>
+      <button type="button" (click)="openCreateRoleForm()" *ngIf="canManageRoles">Nouveau role</button>
+    </div>
+
+    <div class="form-card" *ngIf="roleFormVisible">
+
+      <h3>{{ editingRole ? 'Modifier' : 'Creer' }} un role</h3>
+
+      <form [formGroup]="roleForm" (ngSubmit)="submitRoleForm()">
+
+        <div class="form-grid">
+
+          <div class="form-row">
+            <label for="code">Code</label>
+            <input id="code" type="text" formControlName="code" placeholder="ACCOUNTANT" />
+          </div>
+
+          <div class="form-row">
+            <label for="name">Nom</label>
+            <input id="name" type="text" formControlName="name" placeholder="Comptable" />
+          </div>
+
+        </div>
+
+        <div class="form-row">
+          <label for="description">Description (optionnel)</label>
+          <textarea id="description" formControlName="description" rows="2"></textarea>
+        </div>
+
+        <div class="permissions-select">
+
+          <label>Permissions</label>
+
+          <div class="permission-module" *ngFor="let module of permissionModules">
+
+            <h4>{{ module }}</h4>
+
+            <div class="permission-chips">
+              <label
+                class="permission-chip"
+                *ngFor="let permission of permissionsByModule(module)"
+                [class.selected]="selectedPermissionIds.has(permission.id)">
+                <input
+                  type="checkbox"
+                  [checked]="selectedPermissionIds.has(permission.id)"
+                  (change)="togglePermission(permission.id)" />
+                {{ permission.name }}
+              </label>
+            </div>
+
+          </div>
+
+        </div>
+
+        <p class="form-error" *ngIf="formError">{{ formError }}</p>
+
+        <div class="form-actions">
+          <button type="button" class="secondary" (click)="closeRoleForm()" [disabled]="saving">Annuler</button>
+          <button type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Enregistrer' }}</button>
+        </div>
+
+      </form>
+
+    </div>
+
+    <div class="loading" *ngIf="loadingRoles">Chargement des roles...</div>
+
+    <table class="data-table" *ngIf="!loadingRoles && roles.length > 0">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Nom</th>
+          <th>Permissions</th>
+          <th>Type</th>
+          <th *ngIf="canManageRoles"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let role of roles">
+          <td>{{ role.code }}</td>
+          <td>{{ role.name }}</td>
+          <td>{{ role.permissions.length }}</td>
+          <td>{{ role.systemRole ? 'Systeme' : 'Personnalise' }}</td>
+          <td *ngIf="canManageRoles" class="actions-cell">
+            <button type="button" class="small secondary" *ngIf="!role.systemRole" (click)="openEditRoleForm(role)">Modifier</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty-state" *ngIf="!loadingRoles && roles.length === 0">
+      Aucun role configure.
+    </div>
+
+  </div>
+
+</div>

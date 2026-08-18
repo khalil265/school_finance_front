@@ -1,0 +1,242 @@
+<div class="fees-page">
+
+  <div class="header-row">
+    <div>
+      <h1>Configuration des frais</h1>
+      <p class="subtitle">Types de frais et tarifs par niveau et par annee</p>
+    </div>
+  </div>
+
+  <div class="error-banner" *ngIf="errorMessage">{{ errorMessage }}</div>
+  <div class="success-banner" *ngIf="successMessage">{{ successMessage }}</div>
+
+  <div class="tabs">
+    <button
+      type="button"
+      class="tab"
+      [class.active]="activeTab === 'types'"
+      (click)="switchTab('types')">
+      Types de frais
+    </button>
+
+    <button
+      type="button"
+      class="tab"
+      [class.active]="activeTab === 'structures'"
+      (click)="switchTab('structures')">
+      Structures de frais
+    </button>
+  </div>
+
+  <!-- ONGLET TYPES -->
+  <div class="tab-panel" *ngIf="activeTab === 'types'">
+
+    <div class="panel-header">
+      <p>Definissez les categories de frais (scolarite, cantine, transport...) et leur frequence.</p>
+      <button type="button" (click)="openTypeForm()">Nouveau type de frais</button>
+    </div>
+
+    <div class="form-card" *ngIf="typeFormVisible">
+
+      <form [formGroup]="typeForm" (ngSubmit)="submitType()">
+
+        <div class="form-grid">
+
+          <div class="form-row">
+            <label for="code">Code</label>
+            <input id="code" type="text" formControlName="code" placeholder="TUITION" />
+          </div>
+
+          <div class="form-row">
+            <label for="name">Nom</label>
+            <input id="name" type="text" formControlName="name" placeholder="Frais de scolarite" />
+          </div>
+
+          <div class="form-row">
+            <label for="category">Categorie</label>
+            <select id="category" formControlName="category">
+              <option value="REGISTRATION">Inscription</option>
+              <option value="TUITION">Scolarite</option>
+              <option value="CANTEEN">Cantine</option>
+              <option value="TRANSPORT">Transport</option>
+              <option value="EXAM">Examen</option>
+              <option value="UNIFORM">Uniforme</option>
+              <option value="BOOKS">Livres</option>
+              <option value="ACTIVITY">Activite</option>
+              <option value="OTHER">Autre</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label for="frequency">Frequence</label>
+            <select id="frequency" formControlName="frequency">
+              <option value="ONE_TIME">Unique</option>
+              <option value="MONTHLY">Mensuel</option>
+              <option value="QUARTERLY">Trimestriel</option>
+              <option value="SEMESTER">Semestriel</option>
+              <option value="ANNUAL">Annuel</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="form-row">
+          <label for="description">Description (optionnel)</label>
+          <textarea id="description" formControlName="description" rows="2"></textarea>
+        </div>
+
+        <div class="form-row checkbox-row">
+          <label>
+            <input type="checkbox" formControlName="mandatory" />
+            Frais obligatoire
+          </label>
+        </div>
+
+        <p class="form-error" *ngIf="formError">{{ formError }}</p>
+
+        <div class="form-actions">
+          <button type="button" class="secondary" (click)="closeTypeForm()" [disabled]="saving">Annuler</button>
+          <button type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Creer' }}</button>
+        </div>
+
+      </form>
+
+    </div>
+
+    <div class="loading" *ngIf="loadingTypes">Chargement des types de frais...</div>
+
+    <table class="data-table" *ngIf="!loadingTypes && feeTypes.length > 0">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Nom</th>
+          <th>Categorie</th>
+          <th>Frequence</th>
+          <th>Obligatoire</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let type of feeTypes">
+          <td>{{ type.code }}</td>
+          <td>{{ type.name }}</td>
+          <td>{{ categoryLabel(type.category) }}</td>
+          <td>{{ frequencyLabel(type.frequency) }}</td>
+          <td>{{ type.mandatory ? 'Oui' : 'Non' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty-state" *ngIf="!loadingTypes && feeTypes.length === 0">
+      Aucun type de frais configure pour cet etablissement.
+    </div>
+
+  </div>
+
+  <!-- ONGLET STRUCTURES -->
+  <div class="tab-panel" *ngIf="activeTab === 'structures'">
+
+    <div class="filters-row">
+
+      <div class="filter">
+        <label for="filterYear">Annee academique</label>
+        <select id="filterYear" [(ngModel)]="selectedAcademicYearId" (ngModelChange)="onFilterChange()">
+          <option *ngFor="let year of academicYears" [value]="year.id">{{ year.label }}</option>
+        </select>
+      </div>
+
+      <div class="filter">
+        <label for="filterLevel">Niveau</label>
+        <select id="filterLevel" [(ngModel)]="selectedLevelId" (ngModelChange)="onFilterChange()">
+          <option *ngFor="let level of levels" [value]="level.id">{{ level.name }}</option>
+        </select>
+      </div>
+
+      <button type="button" (click)="openStructureForm()">Nouveau tarif</button>
+
+    </div>
+
+    <div class="form-card" *ngIf="structureFormVisible">
+
+      <form [formGroup]="structureForm" (ngSubmit)="submitStructure()">
+
+        <div class="form-grid">
+
+          <div class="form-row">
+            <label for="feeTypeId">Type de frais</label>
+            <select id="feeTypeId" formControlName="feeTypeId">
+              <option value="" disabled>Selectionnez...</option>
+              <option *ngFor="let type of feeTypes" [value]="type.id">{{ type.name }}</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label for="amount">Montant total (XOF)</label>
+            <input id="amount" type="number" formControlName="amount" min="1" />
+          </div>
+
+          <div class="form-row">
+            <label for="installmentCount">Nombre d'echeances</label>
+            <input id="installmentCount" type="number" formControlName="installmentCount" min="1" />
+          </div>
+
+          <div class="form-row">
+            <label for="firstDueDate">Premiere echeance (optionnel)</label>
+            <input id="firstDueDate" type="date" formControlName="firstDueDate" />
+          </div>
+
+          <div class="form-row">
+            <label for="gracePeriodDays">Delai de grace (jours)</label>
+            <input id="gracePeriodDays" type="number" formControlName="gracePeriodDays" min="0" />
+          </div>
+
+        </div>
+
+        <p class="form-hint">
+          Le montant total sera reparti automatiquement sur le nombre d'echeances lors de la generation de l'echeancier de l'eleve.
+        </p>
+
+        <p class="form-error" *ngIf="formError">{{ formError }}</p>
+
+        <div class="form-actions">
+          <button type="button" class="secondary" (click)="closeStructureForm()" [disabled]="saving">Annuler</button>
+          <button type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Creer' }}</button>
+        </div>
+
+      </form>
+
+    </div>
+
+    <div class="loading" *ngIf="loadingStructures">Chargement des structures de frais...</div>
+
+    <table class="data-table" *ngIf="!loadingStructures && feeStructures.length > 0">
+      <thead>
+        <tr>
+          <th>Type de frais</th>
+          <th>Categorie</th>
+          <th>Frequence</th>
+          <th>Montant total</th>
+          <th>Echeances</th>
+          <th>Montant/echeance</th>
+          <th>1ere echeance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let structure of feeStructures">
+          <td>{{ structure.feeTypeName }}</td>
+          <td>{{ categoryLabel(structure.category) }}</td>
+          <td>{{ frequencyLabel(structure.frequency) }}</td>
+          <td>{{ structure.amount | number: '1.0-0' }} XOF</td>
+          <td>{{ structure.installmentCount ?? 1 }}</td>
+          <td>{{ (structure.amount / (structure.installmentCount ?? 1)) | number: '1.0-0' }} XOF</td>
+          <td>{{ structure.firstDueDate ?? '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty-state" *ngIf="!loadingStructures && feeStructures.length === 0">
+      Aucune structure de frais configuree pour ce niveau et cette annee.
+    </div>
+
+  </div>
+
+</div>

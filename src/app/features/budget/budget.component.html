@@ -1,17 +1,207 @@
-<section class="page">
+<div class="budget-page">
 
-    <div class="page-header">
-        <div>
-            <h2>Budget</h2>
-            <p>Suivi des budgets et des lignes budgétaires</p>
+  <div class="header-row">
+    <div>
+      <h1>Budget</h1>
+      <p class="subtitle">Preparation et suivi budgetaire par annee academique</p>
+    </div>
+
+    <button type="button" (click)="openBudgetForm()" *ngIf="canCreate">
+      Nouveau budget
+    </button>
+  </div>
+
+  <div class="error-banner" *ngIf="errorMessage">{{ errorMessage }}</div>
+  <div class="success-banner" *ngIf="successMessage">{{ successMessage }}</div>
+
+  <div class="form-card" *ngIf="budgetFormVisible">
+
+    <h3>Nouveau budget</h3>
+
+    <form [formGroup]="budgetForm" (ngSubmit)="submitBudgetForm()">
+
+      <div class="form-row">
+        <label for="academicYearId">Annee academique</label>
+        <select id="academicYearId" formControlName="academicYearId">
+          <option *ngFor="let year of academicYears" [value]="year.id">{{ year.label }}</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="code">Code</label>
+        <input id="code" type="text" formControlName="code" placeholder="BUD-2026-2027" />
+      </div>
+
+      <div class="form-row">
+        <label for="name">Nom</label>
+        <input id="name" type="text" formControlName="name" placeholder="Budget annuel 2026-2027" />
+      </div>
+
+      <div class="form-row">
+        <label for="description">Description (optionnel)</label>
+        <textarea id="description" formControlName="description" rows="2"></textarea>
+      </div>
+
+      <p class="form-error" *ngIf="formError">{{ formError }}</p>
+
+      <div class="form-actions">
+        <button type="button" class="secondary" (click)="closeBudgetForm()" [disabled]="saving">Annuler</button>
+        <button type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Creer' }}</button>
+      </div>
+
+    </form>
+
+  </div>
+
+  <div class="loading" *ngIf="loading">Chargement des budgets...</div>
+
+  <div class="layout-grid" *ngIf="!loading">
+
+    <table class="data-table" *ngIf="budgets.length > 0">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Nom</th>
+          <th>Annee</th>
+          <th>Montant total</th>
+          <th>Consomme</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let budget of budgets"
+          (click)="selectBudget(budget)"
+          [class.selected]="selectedBudget?.id === budget.id">
+          <td>{{ budget.code }}</td>
+          <td>{{ budget.name }}</td>
+          <td>{{ budget.academicYear }}</td>
+          <td>{{ budget.totalAmount | number: '1.0-0' }} XOF</td>
+          <td>{{ consumptionPercent(budget) }}%</td>
+          <td>
+            <span class="status-badge" [attr.data-status]="budget.status">
+              {{ statusLabel(budget.status) }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty-state" *ngIf="budgets.length === 0">
+      Aucun budget cree pour cet etablissement.
+    </div>
+
+    <div class="detail-panel" *ngIf="selectedBudget">
+
+      <div class="detail-header">
+        <h3>{{ selectedBudget.name }}</h3>
+        <span class="status-badge" [attr.data-status]="selectedBudget.status">
+          {{ statusLabel(selectedBudget.status) }}
+        </span>
+      </div>
+
+      <p class="detail-code">{{ selectedBudget.code }} - {{ selectedBudget.academicYear }}</p>
+      <p class="detail-description" *ngIf="selectedBudget.description">{{ selectedBudget.description }}</p>
+
+      <div class="summary-grid">
+
+        <div class="summary-box">
+          <span class="label">Montant total</span>
+          <span class="value">{{ selectedBudget.totalAmount | number: '1.0-0' }} XOF</span>
         </div>
+
+        <div class="summary-box">
+          <span class="label">Engage</span>
+          <span class="value">{{ selectedBudget.totalCommitted | number: '1.0-0' }} XOF</span>
+        </div>
+
+        <div class="summary-box">
+          <span class="label">Consomme</span>
+          <span class="value consumed">{{ selectedBudget.totalConsumed | number: '1.0-0' }} XOF</span>
+        </div>
+
+        <div class="summary-box">
+          <span class="label">Disponible</span>
+          <span class="value available">{{ selectedBudget.availableAmount | number: '1.0-0' }} XOF</span>
+        </div>
+
+      </div>
+
+      <div class="detail-actions" *ngIf="selectedBudget.status === 'DRAFT'">
+        <button type="button" (click)="openLineForm()" *ngIf="canCreate">Ajouter une ligne</button>
+        <button type="button" (click)="activateBudget()" [disabled]="activating" *ngIf="canApprove">
+          {{ activating ? 'Activation...' : 'Activer le budget' }}
+        </button>
+      </div>
+
+      <div class="line-form-card" *ngIf="lineFormVisible">
+
+        <form [formGroup]="lineForm" (ngSubmit)="submitLineForm()">
+
+          <div class="form-grid">
+
+            <div class="form-row">
+              <label for="lCode">Code</label>
+              <input id="lCode" type="text" formControlName="code" placeholder="TUITION" />
+            </div>
+
+            <div class="form-row">
+              <label for="lName">Nom</label>
+              <input id="lName" type="text" formControlName="name" placeholder="Frais de scolarite" />
+            </div>
+
+            <div class="form-row">
+              <label for="lAmount">Montant alloue (XOF)</label>
+              <input id="lAmount" type="number" formControlName="allocatedAmount" min="1" />
+            </div>
+
+          </div>
+
+          <div class="form-row">
+            <label for="lDescription">Description (optionnel)</label>
+            <textarea id="lDescription" formControlName="description" rows="2"></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="secondary" (click)="closeLineForm()" [disabled]="saving">Annuler</button>
+            <button type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Ajouter' }}</button>
+          </div>
+
+        </form>
+
+      </div>
+
+      <div class="loading" *ngIf="loadingLines">Chargement des lignes budgetaires...</div>
+
+      <table class="lines-table" *ngIf="!loadingLines && budgetLines.length > 0">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Nom</th>
+            <th>Alloue</th>
+            <th>Engage</th>
+            <th>Consomme</th>
+            <th>Disponible</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let line of budgetLines">
+            <td>{{ line.code }}</td>
+            <td>{{ line.name }}</td>
+            <td>{{ line.allocatedAmount | number: '1.0-0' }}</td>
+            <td>{{ line.committedAmount | number: '1.0-0' }}</td>
+            <td>{{ line.consumedAmount | number: '1.0-0' }}</td>
+            <td>{{ line.availableAmount | number: '1.0-0' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="empty-lines" *ngIf="!loadingLines && budgetLines.length === 0">
+        Aucune ligne budgetaire pour ce budget.
+      </div>
+
     </div>
 
-    <div class="card">
-        <h3>Module Budget</h3>
-        <p>
-            Le module est prêt à être connecté à l'API School Finance.
-        </p>
-    </div>
+  </div>
 
-</section>
+</div>

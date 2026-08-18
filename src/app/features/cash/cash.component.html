@@ -1,17 +1,207 @@
-<section class="page">
+<div class="cash-page">
 
-    <div class="page-header">
-        <div>
-            <h2>Gestion de caisse</h2>
-            <p>Ouverture, mouvements, contrôle et clôture de caisse</p>
+  <div class="header-row">
+    <div>
+      <h1>Caisse</h1>
+      <p class="subtitle">Gestion des sessions de caisse et suivi des mouvements</p>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="secondary" (click)="loadHistory()">
+        {{ showHistory ? 'Masquer' : 'Historique' }}
+      </button>
+
+      <button
+        type="button"
+        (click)="openSessionForm()"
+        *ngIf="canManage && !loading && !currentDetails">
+        Ouvrir une session
+      </button>
+    </div>
+  </div>
+
+  <div class="error-banner" *ngIf="errorMessage">{{ errorMessage }}</div>
+  <div class="success-banner" *ngIf="successMessage">{{ successMessage }}</div>
+
+  <div class="form-card" *ngIf="openFormVisible">
+
+    <h3>Ouvrir une session de caisse</h3>
+
+    <form [formGroup]="openForm" (ngSubmit)="submitOpenForm()">
+
+      <div class="form-row">
+        <label for="openingBalance">Solde d'ouverture (XOF)</label>
+        <input id="openingBalance" type="number" formControlName="openingBalance" min="0" />
+      </div>
+
+      <p class="form-error" *ngIf="formError">{{ formError }}</p>
+
+      <div class="form-actions">
+        <button type="button" class="secondary" (click)="closeSessionFormPanel()" [disabled]="saving">Annuler</button>
+        <button type="submit" [disabled]="saving">{{ saving ? 'Ouverture...' : 'Ouvrir' }}</button>
+      </div>
+
+    </form>
+
+  </div>
+
+  <div class="loading" *ngIf="loading">Chargement de la session de caisse...</div>
+
+  <div class="session-card" *ngIf="!loading && currentDetails">
+
+    <div class="session-header">
+      <div>
+        <h2>Session {{ currentDetails.session.sessionNumber }}</h2>
+        <span class="status-badge" [attr.data-status]="currentDetails.session.status">
+          {{ statusLabel(currentDetails.session.status) }}
+        </span>
+      </div>
+
+      <button
+        type="button"
+        (click)="openCloseForm()"
+        *ngIf="canManage && currentDetails.session.status === 'OPEN' && !closeFormVisible">
+        Cloturer la session
+      </button>
+    </div>
+
+    <div class="summary-grid">
+
+      <div class="summary-box">
+        <span class="label">Solde d'ouverture</span>
+        <span class="value">{{ currentDetails.session.openingBalance | number: '1.0-0' }} XOF</span>
+      </div>
+
+      <div class="summary-box">
+        <span class="label">Entrees</span>
+        <span class="value income">{{ currentDetails.session.totalInflows | number: '1.0-0' }} XOF</span>
+      </div>
+
+      <div class="summary-box">
+        <span class="label">Sorties</span>
+        <span class="value expense">{{ currentDetails.session.totalOutflows | number: '1.0-0' }} XOF</span>
+      </div>
+
+      <div class="summary-box">
+        <span class="label">Solde theorique</span>
+        <span class="value">{{ currentDetails.session.theoreticalBalance | number: '1.0-0' }} XOF</span>
+      </div>
+
+      <div class="summary-box" *ngIf="currentDetails.session.status === 'CLOSED'">
+        <span class="label">Solde physique</span>
+        <span class="value">{{ currentDetails.session.physicalBalance | number: '1.0-0' }} XOF</span>
+      </div>
+
+      <div class="summary-box" *ngIf="currentDetails.session.status === 'CLOSED'">
+        <span class="label">Ecart</span>
+        <span
+          class="value"
+          [class.negative]="(currentDetails.session.differenceAmount ?? 0) !== 0">
+          {{ currentDetails.session.differenceAmount | number: '1.0-0' }} XOF
+        </span>
+      </div>
+
+    </div>
+
+    <div class="close-form-card" *ngIf="closeFormVisible">
+
+      <h3>Cloturer la session</h3>
+
+      <form [formGroup]="closeForm" (ngSubmit)="submitCloseForm()">
+
+        <div class="form-row">
+          <label for="physicalBalance">Solde physique compte (XOF)</label>
+          <input id="physicalBalance" type="number" formControlName="physicalBalance" min="0" />
         </div>
+
+        <div class="form-row">
+          <label for="notes">Notes (optionnel)</label>
+          <textarea id="notes" formControlName="notes" rows="2"></textarea>
+        </div>
+
+        <p class="form-error" *ngIf="formError">{{ formError }}</p>
+
+        <div class="form-actions">
+          <button type="button" class="secondary" (click)="closeCloseFormPanel()" [disabled]="saving">Annuler</button>
+          <button type="submit" [disabled]="saving">{{ saving ? 'Cloture...' : 'Confirmer la cloture' }}</button>
+        </div>
+
+      </form>
+
     </div>
 
-    <div class="card">
-        <h3>Module Gestion de caisse</h3>
-        <p>
-            Le module est prêt à être connecté à l'API School Finance.
-        </p>
+    <table class="data-table" *ngIf="currentDetails.movements.length > 0">
+      <thead>
+        <tr>
+          <th>N° ecriture</th>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Entree</th>
+          <th>Sortie</th>
+          <th>Solde cumule</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of currentDetails.movements">
+          <td>{{ m.entryNumber }}</td>
+          <td>{{ m.entryDate | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td>{{ m.description ?? '-' }}</td>
+          <td class="income">{{ m.inflow ? (m.inflow | number: '1.0-0') : '-' }}</td>
+          <td class="expense">{{ m.outflow ? (m.outflow | number: '1.0-0') : '-' }}</td>
+          <td>{{ m.runningBalance | number: '1.0-0' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty-state" *ngIf="currentDetails.movements.length === 0">
+      Aucun mouvement enregistre pour cette session.
     </div>
 
-</section>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && !currentDetails && !openFormVisible">
+    Aucune session de caisse ouverte actuellement.
+  </div>
+
+  <div class="history-card" *ngIf="showHistory">
+
+    <h3>Historique des sessions</h3>
+
+    <div class="loading" *ngIf="loadingHistory">Chargement de l'historique...</div>
+
+    <table class="data-table" *ngIf="!loadingHistory && sessionHistory.length > 0">
+      <thead>
+        <tr>
+          <th>N° session</th>
+          <th>Ouverture</th>
+          <th>Cloture</th>
+          <th>Solde theorique</th>
+          <th>Solde physique</th>
+          <th>Ecart</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of sessionHistory">
+          <td>{{ s.sessionNumber }}</td>
+          <td>{{ s.openedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td>{{ s.closedAt ? (s.closedAt | date: 'dd/MM/yyyy HH:mm') : '-' }}</td>
+          <td>{{ s.theoreticalBalance | number: '1.0-0' }}</td>
+          <td>{{ s.physicalBalance !== null ? (s.physicalBalance | number: '1.0-0') : '-' }}</td>
+          <td>{{ s.differenceAmount !== null ? (s.differenceAmount | number: '1.0-0') : '-' }}</td>
+          <td>
+            <span class="status-badge" [attr.data-status]="s.status">
+              {{ statusLabel(s.status) }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty-state" *ngIf="!loadingHistory && sessionHistory.length === 0">
+      Aucune session dans l'historique.
+    </div>
+
+  </div>
+
+</div>

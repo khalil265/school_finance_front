@@ -1,17 +1,258 @@
-<section class="page">
+<div class="bank-page">
 
-    <div class="page-header">
-        <div>
-            <h2>Rapprochement bancaire</h2>
-            <p>Rapprochement des relevés bancaires avec la comptabilité</p>
+  <div class="header-row">
+    <div>
+      <h1>Rapprochement bancaire</h1>
+      <p class="subtitle">Releves bancaires et rapprochement avec la comptabilite</p>
+    </div>
+
+    <button type="button" (click)="openStatementForm()" *ngIf="canManage && !selectedStatement">
+      Nouveau releve
+    </button>
+  </div>
+
+  <div class="error-banner" *ngIf="errorMessage">{{ errorMessage }}</div>
+  <div class="success-banner" *ngIf="successMessage">{{ successMessage }}</div>
+
+  <div class="form-card" *ngIf="statementFormVisible">
+
+    <h3>Nouveau releve bancaire</h3>
+
+    <form [formGroup]="statementForm" (ngSubmit)="submitStatementForm()">
+
+      <div class="form-grid">
+
+        <div class="form-row">
+          <label for="statementReference">Reference du releve</label>
+          <input id="statementReference" type="text" formControlName="statementReference" placeholder="RELEVE-2026-08" />
         </div>
+
+        <div class="form-row">
+          <label for="bankName">Banque</label>
+          <input id="bankName" type="text" formControlName="bankName" placeholder="Ecobank" />
+        </div>
+
+        <div class="form-row">
+          <label for="bankAccountNumber">N° compte bancaire (optionnel)</label>
+          <input id="bankAccountNumber" type="text" formControlName="bankAccountNumber" />
+        </div>
+
+        <div class="form-row">
+          <label for="accountCode">Code compte comptable</label>
+          <input id="accountCode" type="text" formControlName="accountCode" placeholder="512000" />
+        </div>
+
+        <div class="form-row">
+          <label for="startDate">Date de debut</label>
+          <input id="startDate" type="date" formControlName="startDate" />
+        </div>
+
+        <div class="form-row">
+          <label for="endDate">Date de fin</label>
+          <input id="endDate" type="date" formControlName="endDate" />
+        </div>
+
+        <div class="form-row">
+          <label for="openingBalance">Solde d'ouverture</label>
+          <input id="openingBalance" type="number" formControlName="openingBalance" />
+        </div>
+
+        <div class="form-row">
+          <label for="closingBalance">Solde de cloture</label>
+          <input id="closingBalance" type="number" formControlName="closingBalance" />
+        </div>
+
+      </div>
+
+      <p class="form-error" *ngIf="formError">{{ formError }}</p>
+
+      <div class="form-actions">
+        <button type="button" class="secondary" (click)="closeStatementForm()" [disabled]="saving">Annuler</button>
+        <button type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Creer' }}</button>
+      </div>
+
+    </form>
+
+  </div>
+
+  <div class="loading" *ngIf="loadingStatements">Chargement des releves...</div>
+
+  <table class="data-table" *ngIf="!loadingStatements && !selectedStatement && statements.length > 0">
+    <thead>
+      <tr>
+        <th>Reference</th>
+        <th>Banque</th>
+        <th>Periode</th>
+        <th>Solde ouverture</th>
+        <th>Solde cloture</th>
+        <th>Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let s of statements" (click)="selectStatement(s)">
+        <td>{{ s.statementReference }}</td>
+        <td>{{ s.bankName }}</td>
+        <td>{{ s.startDate | date: 'dd/MM/yyyy' }} - {{ s.endDate | date: 'dd/MM/yyyy' }}</td>
+        <td>{{ s.openingBalance | number: '1.0-0' }}</td>
+        <td>{{ s.closingBalance | number: '1.0-0' }}</td>
+        <td>
+          <span class="status-badge" [attr.data-status]="s.status">
+            {{ statusLabel(s.status) }}
+          </span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="empty-state" *ngIf="!loadingStatements && !selectedStatement && statements.length === 0">
+    Aucun releve bancaire enregistre.
+  </div>
+
+  <div class="statement-detail" *ngIf="selectedStatement">
+
+    <div class="detail-header">
+      <button type="button" class="secondary small" (click)="closeDetails()">Retour</button>
+
+      <h2>{{ selectedStatement.statementReference }} - {{ selectedStatement.bankName }}</h2>
+
+      <span class="status-badge" [attr.data-status]="selectedStatement.status">
+        {{ statusLabel(selectedStatement.status) }}
+      </span>
+
+      <div class="spacer"></div>
+
+      <button type="button" (click)="openLineForm()" *ngIf="canManage && selectedStatement.status === 'OPEN'">
+        Ajouter une ligne
+      </button>
+
+      <button type="button" class="secondary" (click)="closeStatement()" *ngIf="canManage && selectedStatement.status === 'OPEN'">
+        Cloturer le releve
+      </button>
     </div>
 
-    <div class="card">
-        <h3>Module Rapprochement bancaire</h3>
-        <p>
-            Le module est prêt à être connecté à l'API School Finance.
-        </p>
+    <div class="line-form-card" *ngIf="lineFormVisible">
+
+      <form [formGroup]="lineForm" (ngSubmit)="submitLineForm()">
+
+        <div class="form-grid">
+
+          <div class="form-row">
+            <label for="transactionDate">Date</label>
+            <input id="transactionDate" type="date" formControlName="transactionDate" />
+          </div>
+
+          <div class="form-row">
+            <label for="bankReference">Reference bancaire (optionnel)</label>
+            <input id="bankReference" type="text" formControlName="bankReference" />
+          </div>
+
+          <div class="form-row">
+            <label for="direction">Sens</label>
+            <select id="direction" formControlName="direction">
+              <option value="CREDIT">Entree (credit)</option>
+              <option value="DEBIT">Sortie (debit)</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label for="amount">Montant</label>
+            <input id="amount" type="number" formControlName="amount" min="1" />
+          </div>
+
+        </div>
+
+        <div class="form-row">
+          <label for="description">Description</label>
+          <input id="description" type="text" formControlName="description" />
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="secondary" (click)="closeLineForm()" [disabled]="saving">Annuler</button>
+          <button type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Ajouter' }}</button>
+        </div>
+
+      </form>
+
     </div>
 
-</section>
+    <div class="loading" *ngIf="loadingLines">Chargement des lignes...</div>
+
+    <table class="data-table" *ngIf="!loadingLines && lines.length > 0">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Sens</th>
+          <th>Montant</th>
+          <th>Statut</th>
+          <th>Ecriture liee</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let line of lines"
+          [class.clickable]="line.status === 'UNMATCHED'"
+          (click)="selectLine(line)">
+          <td>{{ line.transactionDate | date: 'dd/MM/yyyy' }}</td>
+          <td>{{ line.description }}</td>
+          <td>{{ directionLabel(line.direction) }}</td>
+          <td>{{ line.amount | number: '1.0-0' }}</td>
+          <td>
+            <span class="status-badge" [attr.data-status]="line.status">
+              {{ statusLabel(line.status) }}
+            </span>
+          </td>
+          <td>{{ line.accountingEntryNumber ?? '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty-state" *ngIf="!loadingLines && lines.length === 0">
+      Aucune ligne pour ce releve.
+    </div>
+
+    <div class="candidates-panel" *ngIf="selectedLine">
+
+      <div class="candidates-header">
+        <h3>Rapprocher : {{ selectedLine.description }} ({{ selectedLine.amount | number: '1.0-0' }} XOF)</h3>
+        <button type="button" class="secondary small" (click)="closeCandidates()">Fermer</button>
+      </div>
+
+      <div class="loading" *ngIf="loadingCandidates">Recherche des ecritures correspondantes...</div>
+
+      <table class="data-table" *ngIf="!loadingCandidates && candidates.length > 0">
+        <thead>
+          <tr>
+            <th>N° ecriture</th>
+            <th>Date</th>
+            <th>Compte</th>
+            <th>Sens</th>
+            <th>Montant</th>
+            <th>Description</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of candidates">
+            <td>{{ c.entryNumber }}</td>
+            <td>{{ c.entryDate | date: 'dd/MM/yyyy' }}</td>
+            <td>{{ c.accountCode }} - {{ c.accountName }}</td>
+            <td>{{ c.direction === 'DEBIT' ? 'Debit' : 'Credit' }}</td>
+            <td>{{ c.amount | number: '1.0-0' }}</td>
+            <td>{{ c.description ?? '-' }}</td>
+            <td>
+              <button type="button" class="small" (click)="reconcileWith(c)">Rapprocher</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="empty-state" *ngIf="!loadingCandidates && candidates.length === 0">
+        Aucune ecriture comptable correspondante trouvee.
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

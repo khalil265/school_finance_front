@@ -38,6 +38,11 @@ import {
   PaymentsComponent
 } from './features/payments/payments.component';
 
+
+import {
+  FeesComponent
+} from './features/fees/fees.component';
+
 import {
   ExpensesComponent
 } from './features/expenses/expenses.component';
@@ -61,6 +66,11 @@ import {
 import {
   BankReconciliationComponent
 } from './features/bank-reconciliation/bank-reconciliation.component';
+
+
+import {
+  SecurityComponent
+} from './features/security/security.component';
 
 
 export const routes: Routes = [
@@ -115,6 +125,12 @@ export const routes: Routes = [
       {
         path: 'payments',
         component: PaymentsComponent
+      },
+
+
+      {
+        path: 'fees',
+        component: FeesComponent
       },
 
 
@@ -200,6 +216,23 @@ export const routes: Routes = [
 
     ]
   },
+
+
+      {
+        path: 'security',
+
+        component:
+          SecurityComponent,
+
+        canActivate: [
+          permissionGuard
+        ],
+
+        data: {
+          permission:
+            'USER_READ'
+        }
+      },
 
 
   {

@@ -1,11 +1,8 @@
-.expenses-page {
+.security-page {
   padding: 24px;
 }
 
 .header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
   margin-bottom: 20px;
 }
 
@@ -32,15 +29,44 @@
   margin-bottom: 16px;
 }
 
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 20px;
+}
+
+.tab {
+  background: none;
+  color: #6b7280;
+  padding: 10px 18px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.tab.active {
+  color: #1e293b;
+  border-bottom: 2px solid #1e293b;
+  font-weight: 600;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.panel-header p {
+  color: #6b7280;
+}
+
 .form-card {
   background: #f9fafb;
   border-radius: 10px;
   padding: 18px;
   margin-bottom: 20px;
-}
-
-.supplier-card {
-  background: #eef2ff;
 }
 
 .form-grid {
@@ -57,7 +83,6 @@
 }
 
 .form-row input,
-.form-row select,
 .form-row textarea {
   padding: 10px 12px;
   border-radius: 8px;
@@ -65,13 +90,54 @@
   font-family: inherit;
 }
 
-.supplier-row {
+.roles-select,
+.permissions-select {
+  margin-bottom: 16px;
+}
+
+.roles-select > label,
+.permissions-select > label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.role-chips,
+.permission-chips {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.supplier-row select {
-  flex: 1;
+.role-chip,
+.permission-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  font-size: 13px;
+  cursor: pointer;
+  background: #fff;
+}
+
+.role-chip.selected,
+.permission-chip.selected {
+  background: #1e293b;
+  color: #fff;
+  border-color: #1e293b;
+}
+
+.permission-module {
+  margin-bottom: 12px;
+}
+
+.permission-module h4 {
+  margin: 8px 0 6px 0;
+  font-size: 13px;
+  color: #6b7280;
+  text-transform: uppercase;
 }
 
 .form-error {
@@ -99,20 +165,14 @@ button.secondary {
   color: #1f2937;
 }
 
-button.danger {
-  background: #dc2626;
+button.small {
+  padding: 6px 10px;
+  font-size: 12px;
 }
 
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-}
-
-.layout-grid {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap: 20px;
-  align-items: start;
 }
 
 .data-table {
@@ -128,18 +188,23 @@ button:disabled {
   text-align: left;
   padding: 10px 12px;
   border-bottom: 1px solid #f3f4f6;
+  font-size: 13px;
 }
 
-.data-table tbody tr {
-  cursor: pointer;
+.actions-cell {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
-.data-table tbody tr:hover {
-  background: #f9fafb;
-}
-
-.data-table tbody tr.selected {
-  background: #eef2ff;
+.role-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 11px;
+  margin-right: 4px;
 }
 
 .status-badge {
@@ -149,94 +214,22 @@ button:disabled {
   font-weight: 600;
   background: #e5e7eb;
   color: #374151;
+  margin-right: 4px;
 }
 
-.status-badge[data-status="APPROVED"],
-.status-badge[data-status="PAID"] {
+.status-badge[data-status="ACTIVE"] {
   background: #dcfce7;
   color: #15803d;
 }
 
-.status-badge[data-status="REJECTED"],
-.status-badge[data-status="CANCELLED"] {
+.status-badge[data-status="INACTIVE"] {
   background: #fee2e2;
   color: #b91c1c;
 }
 
-.status-badge[data-status="SUBMITTED"],
-.status-badge[data-status="VERIFIED"],
-.status-badge[data-status="BUDGET_CHECKED"] {
+.status-badge[data-status="LOCKED"] {
   background: #fef3c7;
   color: #92400e;
-}
-
-.detail-panel {
-  background: #fff;
-  border-radius: 10px;
-  padding: 18px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-.detail-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.detail-subject {
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.detail-description {
-  color: #6b7280;
-  margin-bottom: 16px;
-}
-
-.detail-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.detail-grid .label {
-  display: block;
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.detail-grid .value {
-  display: block;
-  font-weight: 600;
-}
-
-.rejection-reason {
-  background: #fef2f2;
-  color: #b91c1c;
-  padding: 10px 12px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-}
-
-.actions-panel {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.reject-form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.reject-form textarea {
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  font-family: inherit;
 }
 
 .empty-state {

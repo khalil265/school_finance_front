@@ -1,17 +1,305 @@
-<section class="page">
+<div class="accounting-page">
 
-    <div class="page-header">
-        <div>
-            <h2>Comptabilité</h2>
-            <p>Journal, grand livre et balance comptable</p>
+  <div class="header-row">
+    <div>
+      <h1>Comptabilite</h1>
+      <p class="subtitle">Plan comptable, journal, grand livre et balance generale</p>
+    </div>
+  </div>
+
+  <div class="error-banner" *ngIf="errorMessage">{{ errorMessage }}</div>
+  <div class="success-banner" *ngIf="successMessage">{{ successMessage }}</div>
+
+  <div class="tabs">
+    <button type="button" class="tab" [class.active]="activeTab === 'accounts'" (click)="switchTab('accounts')">Plan comptable</button>
+    <button type="button" class="tab" [class.active]="activeTab === 'journal'" (click)="switchTab('journal')">Journal general</button>
+    <button type="button" class="tab" [class.active]="activeTab === 'ledger'" (click)="switchTab('ledger')">Grand livre</button>
+    <button type="button" class="tab" [class.active]="activeTab === 'balance'" (click)="switchTab('balance')">Balance</button>
+  </div>
+
+  <!-- PLAN COMPTABLE -->
+  <div class="tab-panel" *ngIf="activeTab === 'accounts'">
+
+    <div class="panel-header">
+      <p>Comptes comptables de l'etablissement.</p>
+      <button type="button" (click)="openAccountForm()" *ngIf="canManage">Nouveau compte</button>
+    </div>
+
+    <div class="form-card" *ngIf="accountFormVisible">
+
+      <form [formGroup]="accountForm" (ngSubmit)="submitAccountForm()">
+
+        <div class="form-grid">
+
+          <div class="form-row">
+            <label for="code">Code</label>
+            <input id="code" type="text" formControlName="code" placeholder="512000" />
+          </div>
+
+          <div class="form-row">
+            <label for="name">Nom</label>
+            <input id="name" type="text" formControlName="name" placeholder="Banque" />
+          </div>
+
+          <div class="form-row">
+            <label for="accountType">Type</label>
+            <select id="accountType" formControlName="accountType">
+              <option value="ASSET">Actif</option>
+              <option value="LIABILITY">Passif</option>
+              <option value="EQUITY">Capitaux propres</option>
+              <option value="REVENUE">Produit</option>
+              <option value="EXPENSE">Charge</option>
+            </select>
+          </div>
+
         </div>
+
+        <div class="form-row">
+          <label for="description">Description (optionnel)</label>
+          <textarea id="description" formControlName="description" rows="2"></textarea>
+        </div>
+
+        <div class="form-row checkbox-row">
+          <label>
+            <input type="checkbox" formControlName="postingAllowed" />
+            Autoriser les ecritures sur ce compte
+          </label>
+        </div>
+
+        <p class="form-error" *ngIf="formError">{{ formError }}</p>
+
+        <div class="form-actions">
+          <button type="button" class="secondary" (click)="closeAccountForm()" [disabled]="saving">Annuler</button>
+          <button type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Creer' }}</button>
+        </div>
+
+      </form>
+
     </div>
 
-    <div class="card">
-        <h3>Module Comptabilité</h3>
-        <p>
-            Le module est prêt à être connecté à l'API School Finance.
-        </p>
+    <div class="loading" *ngIf="loadingAccounts">Chargement du plan comptable...</div>
+
+    <table class="data-table" *ngIf="!loadingAccounts && accounts.length > 0">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Nom</th>
+          <th>Type</th>
+          <th>Ecritures autorisees</th>
+          <th>Statut</th>
+          <th *ngIf="canManage"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let account of accounts">
+          <td>{{ account.code }}</td>
+          <td>{{ account.name }}</td>
+          <td>{{ accountTypeLabel(account.accountType) }}</td>
+          <td>{{ account.postingAllowed ? 'Oui' : 'Non' }}</td>
+          <td>
+            <span class="status-badge" [attr.data-status]="account.active ? 'ACTIVE' : 'INACTIVE'">
+              {{ account.active ? 'Actif' : 'Inactif' }}
+            </span>
+          </td>
+          <td *ngIf="canManage">
+            <button
+              type="button"
+              class="secondary small"
+              *ngIf="account.active && !account.systemAccount"
+              (click)="toggleAccountActive(account)">
+              Desactiver
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty-state" *ngIf="!loadingAccounts && accounts.length === 0">
+      Aucun compte comptable configure.
     </div>
 
-</section>
+  </div>
+
+  <!-- JOURNAL GENERAL -->
+  <div class="tab-panel" *ngIf="activeTab === 'journal'">
+
+    <div class="filters-row">
+      <div class="filter">
+        <label for="jFrom">Du</label>
+        <input id="jFrom" type="date" [(ngModel)]="filterFrom" />
+      </div>
+      <div class="filter">
+        <label for="jTo">Au</label>
+        <input id="jTo" type="date" [(ngModel)]="filterTo" />
+      </div>
+      <button type="button" (click)="loadJournal()">Filtrer</button>
+    </div>
+
+    <div class="loading" *ngIf="loadingJournal">Chargement du journal...</div>
+
+    <table class="data-table" *ngIf="!loadingJournal && journalLines.length > 0">
+      <thead>
+        <tr>
+          <th>N° ecriture</th>
+          <th>Date</th>
+          <th>Journal</th>
+          <th>Compte</th>
+          <th>Libelle</th>
+          <th>Debit</th>
+          <th>Credit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let line of journalLines">
+          <td>{{ line.entryNumber }}</td>
+          <td>{{ line.entryDate | date: 'dd/MM/yyyy' }}</td>
+          <td>{{ line.journalCode }}</td>
+          <td>{{ line.accountCode }} - {{ line.accountName }}</td>
+          <td>{{ line.description ?? '-' }}</td>
+          <td>{{ line.debit ? (line.debit | number: '1.0-0') : '-' }}</td>
+          <td>{{ line.credit ? (line.credit | number: '1.0-0') : '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty-state" *ngIf="!loadingJournal && journalLines.length === 0">
+      Aucune ecriture pour cette periode.
+    </div>
+
+  </div>
+
+  <!-- GRAND LIVRE -->
+  <div class="tab-panel" *ngIf="activeTab === 'ledger'">
+
+    <div class="filters-row">
+      <div class="filter">
+        <label for="lCode">Code compte</label>
+        <input id="lCode" type="text" [(ngModel)]="ledgerAccountCode" placeholder="512000" />
+      </div>
+      <div class="filter">
+        <label for="lFrom">Du</label>
+        <input id="lFrom" type="date" [(ngModel)]="filterFrom" />
+      </div>
+      <div class="filter">
+        <label for="lTo">Au</label>
+        <input id="lTo" type="date" [(ngModel)]="filterTo" />
+      </div>
+      <button type="button" (click)="loadLedger()">Afficher</button>
+    </div>
+
+    <div class="loading" *ngIf="loadingLedger">Chargement du grand livre...</div>
+
+    <div class="ledger-summary" *ngIf="ledger && !loadingLedger">
+
+      <h3>{{ ledger.accountCode }} - {{ ledger.accountName }}</h3>
+
+      <div class="summary-grid">
+        <div class="summary-box">
+          <span class="label">Total debit</span>
+          <span class="value">{{ ledger.totalDebit | number: '1.0-0' }} XOF</span>
+        </div>
+        <div class="summary-box">
+          <span class="label">Total credit</span>
+          <span class="value">{{ ledger.totalCredit | number: '1.0-0' }} XOF</span>
+        </div>
+        <div class="summary-box">
+          <span class="label">Solde ({{ ledger.balanceNature }})</span>
+          <span class="value">{{ ledger.balance | number: '1.0-0' }} XOF</span>
+        </div>
+      </div>
+
+      <table class="data-table" *ngIf="ledger.lines.length > 0">
+        <thead>
+          <tr>
+            <th>N° ecriture</th>
+            <th>Date</th>
+            <th>Journal</th>
+            <th>Libelle</th>
+            <th>Debit</th>
+            <th>Credit</th>
+            <th>Solde cumule</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let line of ledger.lines">
+            <td>{{ line.entryNumber }}</td>
+            <td>{{ line.entryDate | date: 'dd/MM/yyyy' }}</td>
+            <td>{{ line.journalCode }}</td>
+            <td>{{ line.description ?? '-' }}</td>
+            <td>{{ line.debit ? (line.debit | number: '1.0-0') : '-' }}</td>
+            <td>{{ line.credit ? (line.credit | number: '1.0-0') : '-' }}</td>
+            <td>{{ line.runningBalance | number: '1.0-0' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="empty-state" *ngIf="ledger.lines.length === 0">
+        Aucun mouvement pour ce compte sur cette periode.
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- BALANCE -->
+  <div class="tab-panel" *ngIf="activeTab === 'balance'">
+
+    <div class="filters-row">
+      <div class="filter">
+        <label for="bFrom">Du</label>
+        <input id="bFrom" type="date" [(ngModel)]="filterFrom" />
+      </div>
+      <div class="filter">
+        <label for="bTo">Au</label>
+        <input id="bTo" type="date" [(ngModel)]="filterTo" />
+      </div>
+      <button type="button" (click)="loadTrialBalance()">Filtrer</button>
+    </div>
+
+    <div class="loading" *ngIf="loadingBalance">Chargement de la balance...</div>
+
+    <div *ngIf="trialBalance && !loadingBalance">
+
+      <div class="balance-status" [class.ok]="trialBalance.balanced" [class.ko]="!trialBalance.balanced">
+        {{ trialBalance.balanced ? 'Balance equilibree' : 'Balance NON equilibree' }}
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Compte</th>
+            <th>Type</th>
+            <th>Total debit</th>
+            <th>Total credit</th>
+            <th>Solde debiteur</th>
+            <th>Solde crediteur</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let line of trialBalance.accounts">
+            <td>{{ line.accountCode }}</td>
+            <td>{{ line.accountName }}</td>
+            <td>{{ accountTypeLabel(line.accountType) }}</td>
+            <td>{{ line.totalDebit | number: '1.0-0' }}</td>
+            <td>{{ line.totalCredit | number: '1.0-0' }}</td>
+            <td>{{ line.debitBalance ? (line.debitBalance | number: '1.0-0') : '-' }}</td>
+            <td>{{ line.creditBalance ? (line.creditBalance | number: '1.0-0') : '-' }}</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3"><strong>Total</strong></td>
+            <td><strong>{{ trialBalance.totalDebit | number: '1.0-0' }}</strong></td>
+            <td><strong>{{ trialBalance.totalCredit | number: '1.0-0' }}</strong></td>
+            <td><strong>{{ trialBalance.totalDebitBalance | number: '1.0-0' }}</strong></td>
+            <td><strong>{{ trialBalance.totalCreditBalance | number: '1.0-0' }}</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+
+    </div>
+
+  </div>
+
+</div>

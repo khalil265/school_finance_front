@@ -1,17 +1,58 @@
-<section class="page">
+<div class="treasury-page">
 
-    <div class="page-header">
-        <div>
-            <h2>Trésorerie</h2>
-            <p>Suivi des mouvements financiers</p>
-        </div>
+  <div class="header-row">
+    <div>
+      <h1>Tresorerie</h1>
+      <p class="subtitle">Mouvements de tresorerie de l'etablissement</p>
     </div>
 
-    <div class="card">
-        <h3>Module Trésorerie</h3>
-        <p>
-            Le module est prêt à être connecté à l'API School Finance.
-        </p>
+    <div class="balance-card" *ngIf="balance !== null">
+      <span class="label">Solde de tresorerie</span>
+      <span class="value" [class.negative]="balance < 0">
+        {{ balance | number: '1.0-0' }} XOF
+      </span>
     </div>
+  </div>
 
-</section>
+  <div class="error-banner" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <div class="loading" *ngIf="loading">Chargement des transactions...</div>
+
+  <table class="data-table" *ngIf="!loading && transactions.length > 0">
+    <thead>
+      <tr>
+        <th>N° transaction</th>
+        <th>Type</th>
+        <th>Date</th>
+        <th>Compte</th>
+        <th>Mode de paiement</th>
+        <th>Montant</th>
+        <th>Reference</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let t of transactions">
+        <td>{{ t.transactionNumber }}</td>
+        <td>
+          <span class="type-badge" [attr.data-type]="t.transactionType">
+            {{ typeLabel(t.transactionType) }}
+          </span>
+        </td>
+        <td>{{ t.transactionDate | date: 'dd/MM/yyyy HH:mm' }}</td>
+        <td>{{ t.accountCode }}</td>
+        <td>{{ methodLabel(t.paymentMethod) }}</td>
+        <td [class.income]="t.transactionType === 'INCOME'" [class.expense]="t.transactionType === 'EXPENSE'">
+          {{ t.transactionType === 'INCOME' ? '+' : '-' }}{{ t.amount | number: '1.0-0' }} XOF
+        </td>
+        <td>{{ t.externalReference ?? '-' }}</td>
+        <td>{{ t.description ?? '-' }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="empty-state" *ngIf="!loading && transactions.length === 0">
+    Aucune transaction de tresorerie enregistree.
+  </div>
+
+</div>

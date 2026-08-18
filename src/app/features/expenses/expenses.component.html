@@ -1,17 +1,245 @@
-<section class="page">
+<div class="expenses-page">
 
-    <div class="page-header">
-        <div>
-            <h2>Dépenses</h2>
-            <p>Demandes, validation et paiement des dépenses</p>
+  <div class="header-row">
+    <div>
+      <h1>Depenses</h1>
+      <p class="subtitle">Demandes de depenses et circuit d'approbation</p>
+    </div>
+
+    <button type="button" (click)="openCreateForm()" *ngIf="canCreate">
+      Nouvelle depense
+    </button>
+  </div>
+
+  <div class="error-banner" *ngIf="errorMessage">{{ errorMessage }}</div>
+  <div class="success-banner" *ngIf="successMessage">{{ successMessage }}</div>
+
+  <div class="form-card" *ngIf="formVisible">
+
+    <h3>Nouvelle demande de depense</h3>
+
+    <form [formGroup]="expenseForm" (ngSubmit)="submitExpenseForm()">
+
+      <div class="form-row">
+        <label for="supplierId">Fournisseur (optionnel)</label>
+        <div class="supplier-row">
+          <select id="supplierId" formControlName="supplierId">
+            <option value="">Aucun</option>
+            <option *ngFor="let s of suppliers" [value]="s.id">{{ s.name }}</option>
+          </select>
+          <button type="button" class="secondary" (click)="openSupplierForm()">+ Fournisseur</button>
         </div>
+      </div>
+
+      <div class="form-row">
+        <label for="subject">Objet</label>
+        <input id="subject" type="text" formControlName="subject" placeholder="Achat fournitures scolaires" />
+      </div>
+
+      <div class="form-row">
+        <label for="description">Description (optionnel)</label>
+        <textarea id="description" formControlName="description" rows="2"></textarea>
+      </div>
+
+      <div class="form-row">
+        <label for="amount">Montant (XOF)</label>
+        <input id="amount" type="number" formControlName="amount" min="1" />
+      </div>
+
+      <p class="form-error" *ngIf="formError">{{ formError }}</p>
+
+      <div class="form-actions">
+        <button type="button" class="secondary" (click)="closeForm()" [disabled]="saving">Annuler</button>
+        <button type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Creer' }}</button>
+      </div>
+
+    </form>
+
+  </div>
+
+  <div class="form-card supplier-card" *ngIf="supplierFormVisible">
+
+    <h3>Nouveau fournisseur</h3>
+
+    <form [formGroup]="supplierForm" (ngSubmit)="submitSupplierForm()">
+
+      <div class="form-grid">
+
+        <div class="form-row">
+          <label for="sCode">Code</label>
+          <input id="sCode" type="text" formControlName="code" />
+        </div>
+
+        <div class="form-row">
+          <label for="sName">Nom</label>
+          <input id="sName" type="text" formControlName="name" />
+        </div>
+
+        <div class="form-row">
+          <label for="sPhone">Telephone</label>
+          <input id="sPhone" type="text" formControlName="phone" />
+        </div>
+
+        <div class="form-row">
+          <label for="sEmail">Email</label>
+          <input id="sEmail" type="email" formControlName="email" />
+        </div>
+
+        <div class="form-row">
+          <label for="sTax">Identifiant fiscal</label>
+          <input id="sTax" type="text" formControlName="taxIdentifier" />
+        </div>
+
+        <div class="form-row">
+          <label for="sAddress">Adresse</label>
+          <input id="sAddress" type="text" formControlName="address" />
+        </div>
+
+        <div class="form-row">
+          <label for="sBankName">Banque</label>
+          <input id="sBankName" type="text" formControlName="bankName" />
+        </div>
+
+        <div class="form-row">
+          <label for="sBankAccount">N° compte bancaire</label>
+          <input id="sBankAccount" type="text" formControlName="bankAccount" />
+        </div>
+
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="secondary" (click)="closeSupplierForm()" [disabled]="saving">Annuler</button>
+        <button type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Creer le fournisseur' }}</button>
+      </div>
+
+    </form>
+
+  </div>
+
+  <div class="loading" *ngIf="loading">Chargement des depenses...</div>
+
+  <div class="layout-grid" *ngIf="!loading">
+
+    <table class="data-table" *ngIf="expenses.length > 0">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Objet</th>
+          <th>Fournisseur</th>
+          <th>Montant</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let expense of expenses"
+          (click)="selectExpense(expense)"
+          [class.selected]="selectedExpense?.id === expense.id">
+          <td>{{ expense.expenseNumber }}</td>
+          <td>{{ expense.subject }}</td>
+          <td>{{ expense.supplierName ?? '-' }}</td>
+          <td>{{ expense.amount | number: '1.0-0' }} XOF</td>
+          <td>
+            <span class="status-badge" [attr.data-status]="expense.status">
+              {{ statusLabel(expense.status) }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty-state" *ngIf="expenses.length === 0">
+      Aucune depense enregistree.
     </div>
 
-    <div class="card">
-        <h3>Module Dépenses</h3>
-        <p>
-            Le module est prêt à être connecté à l'API School Finance.
+    <div class="detail-panel" *ngIf="selectedExpense">
+
+      <div class="detail-header">
+        <h3>{{ selectedExpense.expenseNumber }}</h3>
+        <span class="status-badge" [attr.data-status]="selectedExpense.status">
+          {{ statusLabel(selectedExpense.status) }}
+        </span>
+      </div>
+
+      <p class="detail-subject">{{ selectedExpense.subject }}</p>
+      <p class="detail-description" *ngIf="selectedExpense.description">{{ selectedExpense.description }}</p>
+
+      <div class="detail-grid">
+        <div>
+          <span class="label">Montant</span>
+          <span class="value">{{ selectedExpense.amount | number: '1.0-0' }} {{ selectedExpense.currency }}</span>
+        </div>
+
+        <div>
+          <span class="label">Fournisseur</span>
+          <span class="value">{{ selectedExpense.supplierName ?? '-' }}</span>
+        </div>
+
+        <div>
+          <span class="label">Demandeur</span>
+          <span class="value">{{ selectedExpense.requestedBy ?? '-' }}</span>
+        </div>
+      </div>
+
+      <div class="timeline" *ngIf="selectedExpense.status === 'REJECTED'">
+        <p class="rejection-reason">
+          Rejetee par {{ selectedExpense.rejectedBy }} : {{ selectedExpense.rejectionReason }}
         </p>
+      </div>
+
+      <div class="actions-panel" *ngIf="!rejectFormVisible">
+
+        <button
+          type="button"
+          *ngIf="selectedExpense.status === 'DRAFT' && canCreate"
+          (click)="submitExpenseAction()"
+          [disabled]="actionLoading">
+          Soumettre
+        </button>
+
+        <button
+          type="button"
+          *ngIf="selectedExpense.status === 'SUBMITTED' && canVerify"
+          (click)="verifyExpenseAction()"
+          [disabled]="actionLoading">
+          Verifier
+        </button>
+
+        <button
+          type="button"
+          *ngIf="(selectedExpense.status === 'VERIFIED' || selectedExpense.status === 'BUDGET_CHECKED') && canApprove"
+          (click)="approveExpenseAction()"
+          [disabled]="actionLoading">
+          Approuver
+        </button>
+
+        <button
+          type="button"
+          class="danger"
+          *ngIf="(selectedExpense.status === 'SUBMITTED' || selectedExpense.status === 'VERIFIED' || selectedExpense.status === 'BUDGET_CHECKED') && (canVerify || canApprove)"
+          (click)="openRejectForm()"
+          [disabled]="actionLoading">
+          Rejeter
+        </button>
+
+      </div>
+
+      <div class="reject-form" *ngIf="rejectFormVisible">
+
+        <label for="rejectReason">Motif du rejet</label>
+        <textarea id="rejectReason" [(ngModel)]="rejectReason" rows="2"></textarea>
+
+        <div class="form-actions">
+          <button type="button" class="secondary" (click)="cancelReject()" [disabled]="actionLoading">Annuler</button>
+          <button type="button" class="danger" (click)="confirmReject()" [disabled]="actionLoading || !rejectReason.trim()">
+            Confirmer le rejet
+          </button>
+        </div>
+
+      </div>
+
     </div>
 
-</section>
+  </div>
+
+</div>
