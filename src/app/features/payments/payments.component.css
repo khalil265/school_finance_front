@@ -80,6 +80,11 @@ button.secondary {
   color: #1f2937;
 }
 
+button.small {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -111,6 +116,99 @@ button:disabled {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+}
+
+.monthly-panel {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.monthly-summary {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.monthly-box {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px 16px;
+}
+
+.monthly-box .label {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.monthly-box .value {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.monthly-box .value.paid {
+  color: #16a34a;
+}
+
+.monthly-box .value.remaining {
+  color: #dc2626;
+}
+
+.monthly-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.month-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #e5e7eb;
+  min-width: 60px;
+}
+
+.month-chip .month-number {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.month-chip .month-status {
+  font-size: 10px;
+  color: #374151;
+}
+
+.month-chip[data-status="PAID"] {
+  background: #dcfce7;
+}
+
+.month-chip[data-status="PAID"] .month-status {
+  color: #15803d;
+}
+
+.month-chip[data-status="PARTIALLY_PAID"] {
+  background: #fef3c7;
+}
+
+.month-chip[data-status="PARTIALLY_PAID"] .month-status {
+  color: #92400e;
+}
+
+.month-chip[data-status="OVERDUE"] {
+  background: #fee2e2;
+}
+
+.month-chip[data-status="OVERDUE"] .month-status {
+  color: #b91c1c;
+}
+
+.month-chip[data-status="PENDING"] {
+  background: #e5e7eb;
 }
 
 .payment-form {
@@ -178,6 +276,7 @@ button:disabled {
 .payments-table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 12px;
 }
 
 .allocations-table th,

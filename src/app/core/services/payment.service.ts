@@ -82,4 +82,17 @@ export class PaymentService {
       `${this.apiUrl}/receipts/${id}`
     );
   }
+
+
+  downloadReceiptPdf(
+    receiptId: string
+  ): Observable<Blob> {
+
+    return this.http.get(
+      `${this.apiUrl}/receipts/${receiptId}/pdf`,
+      {
+        responseType: 'blob'
+      }
+    );
+  }
 }

@@ -17,6 +17,11 @@ import {
   ForbiddenComponent
 } from './features/forbidden/forbidden.component';
 
+
+import {
+  VerifyReceiptComponent
+} from './features/verify-receipt/verify-receipt.component';
+
 import {
   MainLayoutComponent
 } from './layout/main-layout/main-layout.component';
@@ -84,6 +89,17 @@ export const routes: Routes = [
   {
     path: 'forbidden',
     component: ForbiddenComponent
+  },
+
+  {
+    path: 'verify',
+    component: VerifyReceiptComponent
+  },
+
+
+  {
+    path: 'verify/:code',
+    component: VerifyReceiptComponent
   },
 
 

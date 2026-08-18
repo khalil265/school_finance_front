@@ -78,6 +78,33 @@
       </button>
     </div>
 
+    <div class="monthly-panel" *ngIf="!loadingMonthly && monthsTotal > 0">
+
+      <h3>Suivi des mensualites</h3>
+
+      <div class="monthly-summary">
+        <div class="monthly-box">
+          <span class="label">Mois payes</span>
+          <span class="value paid">{{ monthsPaid }} / {{ monthsTotal }}</span>
+        </div>
+        <div class="monthly-box">
+          <span class="label">Mois restants</span>
+          <span class="value remaining">{{ monthsRemaining }}</span>
+        </div>
+      </div>
+
+      <div class="monthly-grid">
+        <div
+          class="month-chip"
+          *ngFor="let charge of monthlyCharges"
+          [attr.data-status]="charge.status">
+          <span class="month-number">{{ charge.installmentNumber }}</span>
+          <span class="month-status">{{ statusLabel(charge.status) }}</span>
+        </div>
+      </div>
+
+    </div>
+
     <div class="payment-form" *ngIf="formVisible">
 
       <h3>Enregistrer un paiement</h3>
@@ -167,6 +194,15 @@
         </div>
       </div>
 
+      <button
+        type="button"
+        class="secondary"
+        *ngIf="lastPayment.receipt"
+        (click)="downloadReceipt(lastPayment.receipt)"
+        [disabled]="downloadingReceiptId === lastPayment.receipt.id">
+        {{ downloadingReceiptId === lastPayment.receipt.id ? 'Telechargement...' : 'Telecharger le recu PDF' }}
+      </button>
+
       <table class="allocations-table" *ngIf="lastPayment.allocations.length > 0">
         <thead>
           <tr>
@@ -201,6 +237,7 @@
           <th>Mode</th>
           <th>Statut</th>
           <th>Reference</th>
+          <th>Recu</th>
         </tr>
       </thead>
       <tbody>
@@ -215,6 +252,16 @@
             </span>
           </td>
           <td>{{ payment.transactionReference ?? '-' }}</td>
+          <td>
+            <button
+              type="button"
+              class="small secondary"
+              *ngIf="payment.receipt && !payment.receipt.cancelled"
+              (click)="downloadReceipt(payment.receipt)"
+              [disabled]="downloadingReceiptId === payment.receipt.id">
+              {{ downloadingReceiptId === payment.receipt.id ? '...' : 'PDF' }}
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>

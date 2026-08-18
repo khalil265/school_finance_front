@@ -39,6 +39,10 @@ import {
 } from '../../core/services/academic-year.service';
 
 import {
+  BillingService
+} from '../../core/services/billing.service';
+
+import {
   AppContextService
 } from '../../core/services/app-context.service';
 
@@ -51,8 +55,14 @@ import {
 } from '../../shared/models/academic-year.model';
 
 import {
-  Payment
+  Payment,
+  Receipt
 } from '../../shared/models/payment.model';
+
+import {
+  StudentCharge,
+  StudentFinancialSummary
+} from '../../shared/models/billing.model';
 
 
 @Component({
@@ -79,6 +89,9 @@ export class PaymentsComponent implements OnInit {
   private readonly academicYearService =
     inject(AcademicYearService);
 
+  private readonly billingService =
+    inject(BillingService);
+
   private readonly appContext =
     inject(AppContextService);
 
@@ -103,6 +116,11 @@ export class PaymentsComponent implements OnInit {
   lastPayment: Payment | null = null;
 
 
+  monthlySummary: StudentFinancialSummary | null = null;
+
+  monthlyCharges: StudentCharge[] = [];
+
+
   formVisible = false;
 
 
@@ -112,7 +130,11 @@ export class PaymentsComponent implements OnInit {
 
   loadingPayments = false;
 
+  loadingMonthly = false;
+
   saving = false;
+
+  downloadingReceiptId: string | null = null;
 
 
   errorMessage = '';
@@ -260,11 +282,17 @@ export class PaymentsComponent implements OnInit {
 
     this.lastPayment = null;
 
+    this.monthlySummary = null;
+
+    this.monthlyCharges = [];
+
     this.formVisible = false;
 
     this.successMessage = '';
 
     this.loadPayments();
+
+    this.loadMonthlySummary();
   }
 
 
@@ -315,6 +343,75 @@ export class PaymentsComponent implements OnInit {
   }
 
 
+  loadMonthlySummary(): void {
+
+    if (
+      !this.selectedStudent ||
+      !this.selectedAcademicYearId
+    ) {
+      return;
+    }
+
+
+    this.loadingMonthly = true;
+
+
+    this.billingService
+      .getSummary(
+        this.selectedStudent.id,
+        this.selectedAcademicYearId
+      )
+      .pipe(
+        finalize(() => {
+          this.loadingMonthly = false;
+        })
+      )
+      .subscribe({
+
+        next: summary => {
+
+          this.monthlySummary = summary;
+
+          this.monthlyCharges =
+            summary.charges
+              .filter(c => c.installmentNumber != null)
+              .sort(
+                (a, b) =>
+                  (a.installmentNumber ?? 0) - (b.installmentNumber ?? 0)
+              );
+        },
+
+        error: () => {
+
+          this.monthlySummary = null;
+
+          this.monthlyCharges = [];
+        }
+
+      });
+  }
+
+
+  get monthsTotal(): number {
+
+    return this.monthlyCharges.length;
+  }
+
+
+  get monthsPaid(): number {
+
+    return this.monthlyCharges.filter(
+      c => c.status === 'PAID'
+    ).length;
+  }
+
+
+  get monthsRemaining(): number {
+
+    return this.monthsTotal - this.monthsPaid;
+  }
+
+
   onAcademicYearChange(): void {
 
     this.lastPayment = null;
@@ -322,6 +419,8 @@ export class PaymentsComponent implements OnInit {
     if (this.selectedStudent) {
 
       this.loadPayments();
+
+      this.loadMonthlySummary();
     }
   }
 
@@ -440,11 +539,69 @@ export class PaymentsComponent implements OnInit {
           this.formVisible = false;
 
           this.loadPayments();
+
+          this.loadMonthlySummary();
         },
 
         error: (error: HttpErrorResponse) => {
 
           this.handleSaveError(error);
+        }
+
+      });
+  }
+
+
+  downloadReceipt(
+    receipt: Receipt | null
+  ): void {
+
+    if (!receipt || receipt.cancelled) {
+      return;
+    }
+
+
+    this.downloadingReceiptId = receipt.id;
+
+
+    this.paymentService
+      .downloadReceiptPdf(
+        receipt.id
+      )
+      .pipe(
+        finalize(() => {
+          this.downloadingReceiptId = null;
+        })
+      )
+      .subscribe({
+
+        next: blob => {
+
+          const url =
+            window.URL.createObjectURL(blob);
+
+          const link =
+            document.createElement('a');
+
+          link.href = url;
+
+          link.download =
+            `recu-${receipt.receiptNumber}.pdf`;
+
+          link.click();
+
+          window.URL.revokeObjectURL(url);
+        },
+
+        error: error => {
+
+          console.error(
+            'Erreur telechargement recu',
+            error
+          );
+
+          this.errorMessage =
+            'Impossible de telecharger le recu.';
         }
 
       });
@@ -539,6 +696,15 @@ export class PaymentsComponent implements OnInit {
 
       case 'CANCELLED':
         return 'Annule';
+
+      case 'PAID':
+        return 'Paye';
+
+      case 'PARTIALLY_PAID':
+        return 'Partiel';
+
+      case 'OVERDUE':
+        return 'En retard';
 
       default:
         return status || '-';

@@ -9,6 +9,12 @@ import {
 } from '@angular/common';
 
 import {
+  FormBuilder,
+  ReactiveFormsModule,
+  Validators
+} from '@angular/forms';
+
+import {
   FormsModule
 } from '@angular/forms';
 
@@ -23,6 +29,10 @@ import {
 import {
   BillingService
 } from '../../core/services/billing.service';
+
+import {
+  PaymentService
+} from '../../core/services/payment.service';
 
 import {
   StudentService
@@ -49,6 +59,10 @@ import {
   StudentFinancialSummary
 } from '../../shared/models/billing.model';
 
+import {
+  Receipt
+} from '../../shared/models/payment.model';
+
 
 @Component({
   selector: 'app-billing',
@@ -56,7 +70,8 @@ import {
 
   imports: [
     CommonModule,
-    FormsModule
+    FormsModule,
+    ReactiveFormsModule
   ],
 
   templateUrl: './billing.component.html',
@@ -67,6 +82,9 @@ export class BillingComponent implements OnInit {
   private readonly billingService =
     inject(BillingService);
 
+  private readonly paymentService =
+    inject(PaymentService);
+
   private readonly studentService =
     inject(StudentService);
 
@@ -75,6 +93,9 @@ export class BillingComponent implements OnInit {
 
   private readonly appContext =
     inject(AppContextService);
+
+  private readonly fb =
+    inject(FormBuilder);
 
 
   academicYears: AcademicYear[] = [];
@@ -99,6 +120,13 @@ export class BillingComponent implements OnInit {
   loadingEnrollments = false;
 
 
+  paymentFormVisible = false;
+
+  lastReceipt: Receipt | null = null;
+
+  downloadingReceiptId: string | null = null;
+
+
   loadingYears = false;
 
   searching = false;
@@ -109,12 +137,43 @@ export class BillingComponent implements OnInit {
 
   generating = false;
 
+  savingPayment = false;
+
 
   errorMessage = '';
 
   generateError = '';
 
   generateSuccess = '';
+
+  paymentError = '';
+
+  paymentSuccess = '';
+
+
+  readonly paymentForm =
+    this.fb.nonNullable.group({
+
+      amount: [
+        0,
+        [
+          Validators.required,
+          Validators.min(1)
+        ]
+      ],
+
+      paymentMethod: [
+        'CASH',
+        [
+          Validators.required
+        ]
+      ],
+
+      transactionReference: [''],
+
+      notes: ['']
+
+    });
 
 
   ngOnInit(): void {
@@ -235,6 +294,14 @@ export class BillingComponent implements OnInit {
     this.generateError = '';
 
     this.generateSuccess = '';
+
+    this.paymentError = '';
+
+    this.paymentSuccess = '';
+
+    this.lastReceipt = null;
+
+    this.paymentFormVisible = false;
 
     this.loadEnrollments();
 
@@ -477,6 +544,225 @@ export class BillingComponent implements OnInit {
         }
 
       });
+  }
+
+
+  openPaymentForm(): void {
+
+    this.paymentError = '';
+
+    this.paymentSuccess = '';
+
+    this.lastReceipt = null;
+
+    this.paymentForm.reset({
+
+      amount: 0,
+
+      paymentMethod: 'CASH',
+
+      transactionReference: '',
+
+      notes: ''
+
+    });
+
+    this.paymentFormVisible = true;
+  }
+
+
+  closePaymentForm(): void {
+
+    if (this.savingPayment) {
+      return;
+    }
+
+    this.paymentFormVisible = false;
+
+    this.paymentError = '';
+  }
+
+
+  submitPayment(): void {
+
+    if (
+      !this.selectedStudent ||
+      !this.selectedAcademicYearId
+    ) {
+      return;
+    }
+
+
+    this.paymentError = '';
+
+
+    if (this.paymentForm.invalid) {
+
+      this.paymentForm.markAllAsTouched();
+
+      return;
+    }
+
+
+    this.savingPayment = true;
+
+
+    const value =
+      this.paymentForm.getRawValue();
+
+
+    const request = {
+
+      studentId:
+        this.selectedStudent.id,
+
+      academicYearId:
+        this.selectedAcademicYearId,
+
+      amount:
+        value.amount,
+
+      paymentMethod:
+        value.paymentMethod,
+
+      transactionReference:
+        this.nullIfEmpty(
+          value.transactionReference
+        ),
+
+      notes:
+        this.nullIfEmpty(
+          value.notes
+        )
+
+    };
+
+
+    this.paymentService
+      .create(request)
+      .pipe(
+        finalize(() => {
+          this.savingPayment = false;
+        })
+      )
+      .subscribe({
+
+        next: payment => {
+
+          this.paymentSuccess =
+            `Paiement ${payment.paymentNumber} enregistre avec succes.`;
+
+          this.lastReceipt =
+            payment.receipt;
+
+          this.paymentFormVisible = false;
+
+          this.loadSummary();
+        },
+
+        error: (error: HttpErrorResponse) => {
+
+          console.error(
+            'Erreur enregistrement paiement',
+            error
+          );
+
+
+          if (error.status === 403) {
+
+            this.paymentError =
+              'Vous ne disposez pas des droits necessaires.';
+
+            return;
+          }
+
+
+          if (error.status === 400) {
+
+            this.paymentError =
+              error.error?.message
+              ?? 'Les informations saisies sont invalides.';
+
+            return;
+          }
+
+
+          this.paymentError =
+            "Impossible d'enregistrer le paiement.";
+        }
+
+      });
+  }
+
+
+  downloadReceipt(): void {
+
+    if (!this.lastReceipt || this.lastReceipt.cancelled) {
+      return;
+    }
+
+
+    this.downloadingReceiptId =
+      this.lastReceipt.id;
+
+
+    this.paymentService
+      .downloadReceiptPdf(
+        this.lastReceipt.id
+      )
+      .pipe(
+        finalize(() => {
+          this.downloadingReceiptId = null;
+        })
+      )
+      .subscribe({
+
+        next: blob => {
+
+          const url =
+            window.URL.createObjectURL(blob);
+
+          const link =
+            document.createElement('a');
+
+          link.href = url;
+
+          link.download =
+            `recu-${this.lastReceipt!.receiptNumber}.pdf`;
+
+          link.click();
+
+          window.URL.revokeObjectURL(url);
+        },
+
+        error: error => {
+
+          console.error(
+            'Erreur telechargement recu',
+            error
+          );
+
+          this.errorMessage =
+            'Impossible de telecharger le recu.';
+        }
+
+      });
+  }
+
+
+  private nullIfEmpty(
+    value: string | null | undefined
+  ): string | null {
+
+    if (
+      value == null ||
+      value.trim() === ''
+    ) {
+
+      return null;
+    }
+
+    return value.trim();
   }
 
 

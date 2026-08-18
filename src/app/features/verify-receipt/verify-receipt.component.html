@@ -1,0 +1,70 @@
+<div class="verify-page">
+
+  <div class="verify-card">
+
+    <h1>Verification de recu</h1>
+    <p class="subtitle">Verifiez l'authenticite d'un recu de paiement scolaire</p>
+
+    <div class="search-row">
+      <input
+        type="text"
+        placeholder="Code de verification..."
+        [(ngModel)]="code"
+        (keyup.enter)="verify()" />
+
+      <button type="button" (click)="verify()" [disabled]="loading">
+        {{ loading ? 'Verification...' : 'Verifier' }}
+      </button>
+    </div>
+
+    <p class="error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+    <div class="result-card" *ngIf="result" [class.valid]="result.valid && !result.cancelled" [class.invalid]="!result.valid || result.cancelled">
+
+      <div class="result-icon">
+        {{ (result.valid && !result.cancelled) ? '\u2713' : '\u2717' }}
+      </div>
+
+      <h2>
+        {{ (result.valid && !result.cancelled) ? 'Recu authentique' : 'Recu invalide ou annule' }}
+      </h2>
+
+      <div class="result-details">
+
+        <div class="detail-row">
+          <span class="label">Etablissement</span>
+          <span class="value">{{ result.establishment }}</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="label">N. recu</span>
+          <span class="value">{{ result.receiptNumber }}</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="label">N. paiement</span>
+          <span class="value">{{ result.paymentNumber }}</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="label">Montant</span>
+          <span class="value">{{ result.amount | number: '1.0-0' }} XOF</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="label">Mode de paiement</span>
+          <span class="value">{{ methodLabel(result.paymentMethod) }}</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="label">Date d'emission</span>
+          <span class="value">{{ result.issuedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

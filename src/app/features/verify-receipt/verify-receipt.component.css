@@ -1,0 +1,112 @@
+.verify-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  padding: 24px;
+}
+
+.verify-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.verify-card h1 {
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.search-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.search-row input {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
+button {
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: none;
+  background: #1e293b;
+  color: #fff;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #dc2626;
+  margin-bottom: 12px;
+}
+
+.result-card {
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  margin-top: 16px;
+}
+
+.result-card.valid {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.result-card.invalid {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.result-icon {
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+
+.result-card.valid .result-icon {
+  color: #16a34a;
+}
+
+.result-card.invalid .result-icon {
+  color: #dc2626;
+}
+
+.result-card h2 {
+  margin-bottom: 16px;
+}
+
+.result-details {
+  text-align: left;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  font-size: 14px;
+}
+
+.detail-row .label {
+  color: #6b7280;
+}
+
+.detail-row .value {
+  font-weight: 600;
+}
