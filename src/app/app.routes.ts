@@ -1,3 +1,5 @@
+﻿import { PermissionsComponent } from './features/permissions/permissions.component';
+import { RolesComponent } from './features/roles/roles.component';
 import { Routes } from '@angular/router';
 
 import {
@@ -79,6 +81,7 @@ import {
 
 
 export const routes: Routes = [
+  { path: 'permissions', component: PermissionsComponent },
 
   {
     path: 'login',
@@ -257,3 +260,7 @@ export const routes: Routes = [
   }
 
 ];
+
+
+
+

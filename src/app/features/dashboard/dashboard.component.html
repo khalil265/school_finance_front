@@ -1,453 +1,774 @@
-<section class="dashboard">
+﻿<section
+  class="dashboard"
+  [class.theme-dark]="currentTheme === 'dark'"
+  [class.theme-blue]="currentTheme === 'blue'">
 
-    <div class="page-header">
+  <!-- HEADER -->
 
-        <div>
+  <div class="page-header">
 
-            <h2>
-                Tableau de bord
-            </h2>
+    <div>
 
-            <p>
-                Vue d'ensemble de la situation
-                financière de l'établissement
-            </p>
-
-        </div>
-
+      <div class="title-line">
 
         <button
-            type="button"
-            class="refresh"
-            [disabled]="loading"
-            (click)="loadDashboard()">
+          type="button"
+          class="sidebar-toggle"
+          (click)="toggleSidebar()"
+          title="Replier / déplier le menu">
 
-            {{ loading ? 'Chargement...' : 'Actualiser' }}
+          ☰
 
         </button>
 
-    </div>
+        <div>
 
+          <h2>
+            Tableau de bord
+          </h2>
 
-    <div
-        *ngIf="errorMessage"
-        class="error-box">
+          <p>
+            Vue d'ensemble de la situation financière
+            de l'établissement
+          </p>
 
-        {{ errorMessage }}
+        </div>
 
-    </div>
-
-
-    <div
-        *ngIf="loading && !summary"
-        class="loading-panel">
-
-        Chargement du tableau de bord...
+      </div>
 
     </div>
 
 
-    <ng-container *ngIf="summary as data">
+    <div class="header-actions">
 
-        <!-- ================================================= -->
-        <!-- KPI PRINCIPAUX -->
-        <!-- ================================================= -->
+      <!-- THEMES -->
 
-        <div class="stats">
+      <div class="theme-selector">
 
-            <div class="stat-card">
+        <button
+          type="button"
+          [class.active]="currentTheme === 'light'"
+          (click)="setTheme('light')"
+          title="Thème clair">
 
-                <div class="stat-top">
+          ☀
 
-                    <span>
-                        Encaissements
-                    </span>
+        </button>
 
-                    <div class="stat-icon income-bg">
-                        ↓
-                    </div>
+        <button
+          type="button"
+          [class.active]="currentTheme === 'dark'"
+          (click)="setTheme('dark')"
+          title="Thème sombre">
 
-                </div>
+          ◐
 
-                <strong>
-                    {{ formatAmount(data.totalIncome) }}
-                </strong>
+        </button>
 
-                <small>
-                    Paiements élèves enregistrés
-                </small>
+        <button
+          type="button"
+          [class.active]="currentTheme === 'blue'"
+          (click)="setTheme('blue')"
+          title="Thème bleu">
 
-            </div>
+          ◆
 
+        </button>
 
-            <div class="stat-card">
-
-                <div class="stat-top">
-
-                    <span>
-                        Dépenses payées
-                    </span>
-
-                    <div class="stat-icon expense-bg">
-                        ↑
-                    </div>
-
-                </div>
-
-                <strong>
-                    {{ formatAmount(data.totalExpenses) }}
-                </strong>
-
-                <small>
-                    {{ data.paidExpenses }}
-                    dépense(s) payée(s)
-                </small>
-
-            </div>
+      </div>
 
 
-            <div class="stat-card">
+      <button
+        type="button"
+        class="refresh"
+        [disabled]="loading"
+        (click)="loadDashboard()">
 
-                <div class="stat-top">
+        {{ loading ? 'Chargement...' : 'Actualiser' }}
 
-                    <span>
-                        Budget disponible
-                    </span>
+      </button>
 
-                    <div class="stat-icon budget-bg">
-                        B
-                    </div>
+    </div>
 
-                </div>
-
-                <strong>
-                    {{ formatAmount(data.budgetAvailable) }}
-                </strong>
-
-                <small>
-                    Budget total :
-                    {{ formatAmount(data.budgetAmount) }}
-                </small>
-
-            </div>
+  </div>
 
 
-            <div class="stat-card">
+  <!-- ERREUR -->
 
-                <div class="stat-top">
+  <div
+    *ngIf="errorMessage"
+    class="error-box">
 
-                    <span>
-                        Solde caisse
-                    </span>
+    {{ errorMessage }}
 
-                    <div class="stat-icon cash-bg">
-                        C
-                    </div>
+  </div>
 
-                </div>
 
-                <strong>
-                    {{ formatAmount(data.cashBalance) }}
-                </strong>
+  <!-- LOADING -->
 
-                <small>
-                    Compte caisse 571000
-                </small>
+  <div
+    *ngIf="loading && !summary"
+    class="loading-panel">
 
-            </div>
+    Chargement du tableau de bord...
+
+  </div>
+
+
+  <ng-container *ngIf="summary as data">
+
+
+    <!-- ================================================= -->
+    <!-- KPI -->
+    <!-- ================================================= -->
+
+    <div class="stats">
+
+
+      <div class="stat-card income-card">
+
+        <div class="stat-top">
+
+          <span>
+            Encaissements
+          </span>
+
+          <div class="stat-icon income-bg">
+            ↓
+          </div>
+
+        </div>
+
+        <strong>
+          {{ formatAmount(data.totalIncome) }}
+        </strong>
+
+        <small>
+          Paiements élèves enregistrés
+        </small>
+
+      </div>
+
+
+      <div class="stat-card expense-card">
+
+        <div class="stat-top">
+
+          <span>
+            Dépenses payées
+          </span>
+
+          <div class="stat-icon expense-bg">
+            ↑
+          </div>
+
+        </div>
+
+        <strong>
+          {{ formatAmount(data.totalExpenses) }}
+        </strong>
+
+        <small>
+          {{ data.paidExpenses }}
+          dépense(s) payée(s)
+        </small>
+
+      </div>
+
+
+      <div class="stat-card budget-card">
+
+        <div class="stat-top">
+
+          <span>
+            Budget disponible
+          </span>
+
+          <div class="stat-icon budget-bg">
+            B
+          </div>
+
+        </div>
+
+        <strong>
+          {{ formatAmount(data.budgetAvailable) }}
+        </strong>
+
+        <small>
+          Budget total :
+          {{ formatAmount(data.budgetAmount) }}
+        </small>
+
+      </div>
+
+
+      <div class="stat-card cash-card">
+
+        <div class="stat-top">
+
+          <span>
+            Solde caisse
+          </span>
+
+          <div class="stat-icon cash-bg">
+            C
+          </div>
+
+        </div>
+
+        <strong>
+          {{ formatAmount(data.cashBalance) }}
+        </strong>
+
+        <small>
+          Compte caisse 571000
+        </small>
+
+      </div>
+
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- MINI KPI -->
+    <!-- ================================================= -->
+
+    <div class="secondary-stats">
+
+      <div class="mini-card">
+
+        <span>
+          Budget engagé
+        </span>
+
+        <strong>
+          {{ formatAmount(data.budgetCommitted) }}
+        </strong>
+
+      </div>
+
+
+      <div class="mini-card">
+
+        <span>
+          Budget consommé
+        </span>
+
+        <strong>
+          {{ formatAmount(data.budgetConsumed) }}
+        </strong>
+
+      </div>
+
+
+      <div class="mini-card">
+
+        <span>
+          Dépenses en attente
+        </span>
+
+        <strong>
+          {{ data.pendingExpenses }}
+        </strong>
+
+      </div>
+
+
+      <div class="mini-card">
+
+        <span>
+          Dépenses approuvées
+        </span>
+
+        <strong>
+          {{ data.approvedExpenses }}
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- GRAPHIQUES -->
+    <!-- ================================================= -->
+
+    <div class="charts-grid">
+
+
+      <!-- GRAPHIQUE ENCAISSEMENTS / DEPENSES -->
+
+      <div class="chart-panel">
+
+        <div class="chart-header">
+
+          <div>
+
+            <h3>
+              Encaissements vs dépenses
+            </h3>
+
+            <p>
+              Comparaison des flux financiers
+            </p>
+
+          </div>
 
         </div>
 
 
-        <!-- ================================================= -->
-        <!-- BUDGET + DEPENSES -->
-        <!-- ================================================= -->
+        <div class="bar-chart">
 
-        <div class="secondary-stats">
+          <div class="bar-group">
 
-            <div class="mini-card">
-
-                <span>
-                    Budget engagé
-                </span>
-
-                <strong>
-                    {{ formatAmount(data.budgetCommitted) }}
-                </strong>
+            <div
+              class="bar income-bar"
+              [style.height.%]="incomePercentage">
 
             </div>
 
+            <span>
+              {{ incomePercentage }}%
+            </span>
 
-            <div class="mini-card">
+            <small>
+              Encaissements
+            </small>
 
-                <span>
-                    Budget consommé
-                </span>
-
-                <strong>
-                    {{ formatAmount(data.budgetConsumed) }}
-                </strong>
-
-            </div>
+          </div>
 
 
-            <div class="mini-card">
+          <div class="bar-group">
 
-                <span>
-                    Dépenses en attente
-                </span>
-
-                <strong>
-                    {{ data.pendingExpenses }}
-                </strong>
+            <div
+              class="bar expense-bar"
+              [style.height.%]="expensePercentage">
 
             </div>
 
+            <span>
+              {{ expensePercentage }}%
+            </span>
 
-            <div class="mini-card">
+            <small>
+              Dépenses
+            </small>
 
-                <span>
-                    Dépenses approuvées
-                </span>
-
-                <strong>
-                    {{ data.approvedExpenses }}
-                </strong>
-
-            </div>
+          </div>
 
         </div>
 
 
-        <!-- ================================================= -->
-        <!-- MAIN CONTENT -->
-        <!-- ================================================= -->
-
-        <div class="dashboard-grid">
-
-            <!-- TRANSACTIONS -->
-
-            <div class="panel">
-
-                <div class="panel-header">
-
-                    <div>
-
-                        <h3>
-                            Activité financière récente
-                        </h3>
-
-                        <p>
-                            Les 10 dernières opérations
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <div
-                    *ngIf="
-                        !data.recentTransactions ||
-                        data.recentTransactions.length === 0
-                    "
-                    class="empty">
-
-                    Aucune opération disponible.
-
-                </div>
-
-
-                <div
-                    *ngIf="
-                        data.recentTransactions &&
-                        data.recentTransactions.length > 0
-                    "
-                    class="transactions">
-
-
-                    <div
-                        *ngFor="
-                            let transaction
-                            of data.recentTransactions
-                        "
-                        class="transaction-row">
-
-
-                        <div
-                            class="transaction-icon"
-                            [ngClass]="
-                                transactionClass(transaction)
-                            ">
-
-                            {{
-                                transaction.type === 'INCOME'
-                                    ? '↓'
-                                    : '↑'
-                            }}
-
-                        </div>
-
-
-                        <div class="transaction-main">
-
-                            <strong>
-                                {{ transaction.description }}
-                            </strong>
-
-                            <span>
-                                {{ transaction.reference }}
-                            </span>
-
-                        </div>
-
-
-                        <div class="transaction-date">
-
-                            {{
-                                transaction.transactionDate
-                                    | date:'dd/MM/yyyy HH:mm'
-                            }}
-
-                        </div>
-
-
-                        <div
-                            class="transaction-amount"
-                            [ngClass]="
-                                transactionClass(transaction)
-                            ">
-
-                            {{
-                                transactionSign(transaction)
-                            }}
-
-                            {{
-                                formatAmount(
-                                    transaction.amount
-                                )
-                            }}
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <!-- BUDGET -->
-
-            <div class="panel financial-panel">
-
-                <h3>
-                    Situation budgétaire
-                </h3>
-
-
-                <div class="financial-row">
-
-                    <span>
-                        Budget total
-                    </span>
-
-                    <strong>
-                        {{ formatAmount(data.budgetAmount) }}
-                    </strong>
-
-                </div>
-
-
-                <div class="financial-row">
-
-                    <span>
-                        Engagements
-                    </span>
-
-                    <strong>
-                        {{ formatAmount(data.budgetCommitted) }}
-                    </strong>
-
-                </div>
-
-
-                <div class="financial-row">
-
-                    <span>
-                        Consommé
-                    </span>
-
-                    <strong>
-                        {{ formatAmount(data.budgetConsumed) }}
-                    </strong>
-
-                </div>
-
-
-                <div class="financial-row highlight">
-
-                    <span>
-                        Disponible
-                    </span>
-
-                    <strong>
-                        {{ formatAmount(data.budgetAvailable) }}
-                    </strong>
-
-                </div>
-
-
-                <div class="separator"></div>
-
-
-                <h3>
-                    Situation des dépenses
-                </h3>
-
-
-                <div class="status-row">
-
-                    <span>
-                        En attente
-                    </span>
-
-                    <strong class="badge pending">
-                        {{ data.pendingExpenses }}
-                    </strong>
-
-                </div>
-
-
-                <div class="status-row">
-
-                    <span>
-                        Approuvées
-                    </span>
-
-                    <strong class="badge approved">
-                        {{ data.approvedExpenses }}
-                    </strong>
-
-                </div>
-
-
-                <div class="status-row">
-
-                    <span>
-                        Payées
-                    </span>
-
-                    <strong class="badge paid">
-                        {{ data.paidExpenses }}
-                    </strong>
-
-                </div>
-
-            </div>
+        <div class="chart-legend">
+
+          <span>
+            <i class="legend-income"></i>
+            Encaissements
+          </span>
+
+          <span>
+            <i class="legend-expense"></i>
+            Dépenses
+          </span>
 
         </div>
 
-    </ng-container>
+      </div>
+
+
+      <!-- GRAPHIQUE BUDGET -->
+
+      <div class="chart-panel">
+
+        <div class="chart-header">
+
+          <div>
+
+            <h3>
+              Consommation du budget
+            </h3>
+
+            <p>
+              Utilisation du budget disponible
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="budget-chart">
+
+          <div
+            class="budget-circle"
+            [style.--progress]="budgetConsumedPercentage + '%'">
+
+            <div class="budget-circle-inner">
+
+              <strong>
+                {{ budgetConsumedPercentage }}%
+              </strong>
+
+              <span>
+                consommé
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="budget-details">
+
+            <div>
+
+              <span>
+                Total
+              </span>
+
+              <strong>
+                {{ formatAmount(data.budgetAmount) }}
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Consommé
+              </span>
+
+              <strong>
+                {{ formatAmount(data.budgetConsumed) }}
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Disponible
+              </span>
+
+              <strong class="available">
+                {{ formatAmount(data.budgetAvailable) }}
+              </strong>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- REPARTITION -->
+
+      <div class="chart-panel expense-distribution">
+
+        <div class="chart-header">
+
+          <div>
+
+            <h3>
+              Répartition financière
+            </h3>
+
+            <p>
+              Encaissements et dépenses
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="donut-container">
+
+          <div
+            class="donut"
+            [style.--income]="incomePercentage + '%'">
+
+            <div class="donut-center">
+
+              <strong>
+                {{ formatAmount(data.totalIncome + data.totalExpenses) }}
+              </strong>
+
+              <span>
+                mouvements
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="donut-legend">
+
+            <div>
+
+              <span class="dot income-dot"></span>
+
+              <span>
+                Encaissements
+              </span>
+
+              <strong>
+                {{ formatAmount(data.totalIncome) }}
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span class="dot expense-dot"></span>
+
+              <span>
+                Dépenses
+              </span>
+
+              <strong>
+                {{ formatAmount(data.totalExpenses) }}
+              </strong>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- ACTIVITE + BUDGET -->
+    <!-- ================================================= -->
+
+    <div class="dashboard-grid">
+
+
+      <!-- ACTIVITE -->
+
+      <div class="panel">
+
+        <div class="panel-header">
+
+          <div>
+
+            <h3>
+              Activité financière récente
+            </h3>
+
+            <p>
+              Les 10 dernières opérations
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div
+          *ngIf="
+            !data.recentTransactions ||
+            data.recentTransactions.length === 0
+          "
+          class="empty">
+
+          Aucune opération disponible.
+
+        </div>
+
+
+        <div
+          *ngIf="
+            data.recentTransactions &&
+            data.recentTransactions.length > 0
+          "
+          class="transactions">
+
+
+          <div
+            *ngFor="
+              let transaction
+              of data.recentTransactions
+            "
+            class="transaction-row">
+
+
+            <div
+              class="transaction-icon"
+              [ngClass]="transactionClass(transaction)">
+
+              {{
+                transaction.type === 'INCOME'
+                  ? '↓'
+                  : '↑'
+              }}
+
+            </div>
+
+
+            <div class="transaction-main">
+
+              <strong>
+                {{ transaction.description }}
+              </strong>
+
+              <span>
+                {{ transaction.reference }}
+              </span>
+
+            </div>
+
+
+            <div class="transaction-date">
+
+              {{
+                transaction.transactionDate
+                  | date:'dd/MM/yyyy HH:mm'
+              }}
+
+            </div>
+
+
+            <div
+              class="transaction-amount"
+              [ngClass]="transactionClass(transaction)">
+
+              {{ transactionSign(transaction) }}
+
+              {{
+                formatAmount(transaction.amount)
+              }}
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- SITUATION BUDGETAIRE -->
+
+      <div class="panel financial-panel">
+
+        <h3>
+          Situation budgétaire
+        </h3>
+
+
+        <div class="financial-row">
+
+          <span>
+            Budget total
+          </span>
+
+          <strong>
+            {{ formatAmount(data.budgetAmount) }}
+          </strong>
+
+        </div>
+
+
+        <div class="financial-row">
+
+          <span>
+            Engagements
+          </span>
+
+          <strong>
+            {{ formatAmount(data.budgetCommitted) }}
+          </strong>
+
+        </div>
+
+
+        <div class="financial-row">
+
+          <span>
+            Consommé
+          </span>
+
+          <strong>
+            {{ formatAmount(data.budgetConsumed) }}
+          </strong>
+
+        </div>
+
+
+        <div class="financial-row highlight">
+
+          <span>
+            Disponible
+          </span>
+
+          <strong>
+            {{ formatAmount(data.budgetAvailable) }}
+          </strong>
+
+        </div>
+
+
+        <div class="separator"></div>
+
+
+        <h3>
+          Situation des dépenses
+        </h3>
+
+
+        <div class="status-row">
+
+          <span>
+            En attente
+          </span>
+
+          <strong class="badge pending">
+            {{ data.pendingExpenses }}
+          </strong>
+
+        </div>
+
+
+        <div class="status-row">
+
+          <span>
+            Approuvées
+          </span>
+
+          <strong class="badge approved">
+            {{ data.approvedExpenses }}
+          </strong>
+
+        </div>
+
+
+        <div class="status-row">
+
+          <span>
+            Payées
+          </span>
+
+          <strong class="badge paid">
+            {{ data.paidExpenses }}
+          </strong>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </ng-container>
 
 </section>

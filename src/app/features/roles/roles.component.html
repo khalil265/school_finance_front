@@ -1,0 +1,204 @@
+﻿<section class="roles-page">
+
+  <div class="page-header">
+
+    <div>
+      <h2>Rôles</h2>
+
+      <p>
+        Gestion des rôles et des profils utilisateurs
+      </p>
+    </div>
+
+    <button
+      class="primary-button"
+      type="button"
+      (click)="newRole()">
+
+      + Nouveau rôle
+
+    </button>
+
+  </div>
+
+
+  <div
+    class="form-card"
+    *ngIf="showForm">
+
+    <div class="form-header">
+
+      <div>
+        <h3>
+          {{ editingRole ? 'Modifier le rôle' : 'Nouveau rôle' }}
+        </h3>
+
+        <p>
+          Définissez le profil et ses autorisations.
+        </p>
+      </div>
+
+      <button
+        class="close-button"
+        type="button"
+        (click)="cancel()">
+
+        ×
+
+      </button>
+
+    </div>
+
+
+    <div class="form-grid">
+
+      <label>
+        Nom du rôle
+
+        <input
+          [(ngModel)]="form.name"
+          placeholder="Ex : Comptable">
+      </label>
+
+
+      <label>
+        Code
+
+        <input
+          [(ngModel)]="form.code"
+          placeholder="Ex : ACCOUNTANT">
+      </label>
+
+
+      <label class="full">
+        Description
+
+        <textarea
+          [(ngModel)]="form.description"
+          rows="3"
+          placeholder="Description du rôle">
+        </textarea>
+      </label>
+
+
+      <label class="switch-line">
+
+        <input
+          type="checkbox"
+          [(ngModel)]="form.active">
+
+        <span>
+          Rôle actif
+        </span>
+
+      </label>
+
+    </div>
+
+
+    <div class="form-actions">
+
+      <button
+        class="secondary-button"
+        type="button"
+        (click)="cancel()">
+
+        Annuler
+
+      </button>
+
+      <button
+        class="primary-button"
+        type="button"
+        (click)="saveRole()">
+
+        Enregistrer
+
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <div class="roles-grid">
+
+    <article
+      class="role-card"
+      *ngFor="let role of roles">
+
+      <div class="role-card-header">
+
+        <div class="role-icon">
+          {{ role.name.charAt(0).toUpperCase() }}
+        </div>
+
+        <div>
+
+          <h3>
+            {{ role.name }}
+          </h3>
+
+          <span class="role-code">
+            {{ role.code }}
+          </span>
+
+        </div>
+
+        <span
+          class="status"
+          [class.inactive]="!role.active">
+
+          {{ role.active ? 'Actif' : 'Inactif' }}
+
+        </span>
+
+      </div>
+
+
+      <p class="role-description">
+        {{ role.description }}
+      </p>
+
+
+      <div class="permission-count">
+
+        <strong>
+          {{ role.permissions.includes('*')
+              ? 'Toutes'
+              : role.permissions.length }}
+        </strong>
+
+        <span>
+          permissions
+        </span>
+
+      </div>
+
+
+      <div class="role-actions">
+
+        <button
+          type="button"
+          (click)="editRole(role)">
+
+          Modifier
+
+        </button>
+
+        <button
+          type="button"
+          class="danger"
+          (click)="deleteRole(role)">
+
+          Supprimer
+
+        </button>
+
+      </div>
+
+    </article>
+
+  </div>
+
+</section>

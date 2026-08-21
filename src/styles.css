@@ -28,3 +28,67 @@ select,
 textarea {
     font: inherit;
 }
+/* SCHOOL FINANCE AUTO SIDEBAR */
+
+/* Repli automatique du menu latéral */
+
+@media (min-width: 1000px) {
+
+    body.sidebar-collapsed aside.sidebar,
+    body.sidebar-collapsed .sidebar,
+    body.sidebar-collapsed .app-sidebar,
+    body.sidebar-collapsed .layout-sidebar {
+        width: 76px !important;
+        min-width: 76px !important;
+        transition: width .25s ease;
+        overflow-x: hidden;
+    }
+
+    body.sidebar-collapsed aside.sidebar span,
+    body.sidebar-collapsed .sidebar span,
+    body.sidebar-collapsed .app-sidebar span,
+    body.sidebar-collapsed .layout-sidebar span {
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity .15s ease;
+    }
+
+    body.sidebar-collapsed aside.sidebar .logo,
+    body.sidebar-collapsed .sidebar .logo {
+        justify-content: center;
+    }
+
+    body.sidebar-collapsed aside.sidebar:hover,
+    body.sidebar-collapsed .sidebar:hover,
+    body.sidebar-collapsed .app-sidebar:hover,
+    body.sidebar-collapsed .layout-sidebar:hover {
+        width: 260px !important;
+        min-width: 260px !important;
+        z-index: 1000;
+        box-shadow: 8px 0 25px rgba(16,24,40,.12);
+    }
+
+    body.sidebar-collapsed aside.sidebar:hover span,
+    body.sidebar-collapsed .sidebar:hover span,
+    body.sidebar-collapsed .app-sidebar:hover span,
+    body.sidebar-collapsed .layout-sidebar:hover span {
+        opacity: 1;
+        visibility: visible;
+    }
+
+}
+
+/* Sur petits écrans : menu réduit automatiquement */
+
+@media (max-width: 999px) {
+
+    aside.sidebar,
+    .sidebar,
+    .app-sidebar,
+    .layout-sidebar {
+        width: 76px !important;
+        min-width: 76px !important;
+    }
+
+}
+

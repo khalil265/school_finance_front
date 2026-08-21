@@ -637,8 +637,19 @@ export class PaymentsComponent implements OnInit {
     }
 
 
+    if (error.status === 404) {
+
+      this.formError =
+        error.error?.message
+        ?? "Aucun compte financier pour cet eleve. Generez d'abord son echeancier dans le module Facturation.";
+
+      return;
+    }
+
+
     this.formError =
-      "Impossible d'enregistrer le paiement.";
+      error.error?.message
+      ?? "Impossible d'enregistrer le paiement.";
   }
 
 

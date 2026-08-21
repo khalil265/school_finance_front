@@ -1,4 +1,4 @@
-import {
+﻿import {
   Component,
   inject,
   OnInit
@@ -29,11 +29,9 @@ import {
     CommonModule
   ],
 
-  templateUrl:
-    './dashboard.component.html',
+  templateUrl: './dashboard.component.html',
 
-  styleUrl:
-    './dashboard.component.css'
+  styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent implements OnInit {
 
@@ -43,19 +41,18 @@ export class DashboardComponent implements OnInit {
   private readonly appContext =
     inject(AppContextService);
 
-
   loading = false;
 
   errorMessage = '';
 
   summary: DashboardSummary | null = null;
 
+  currentTheme: 'light' | 'dark' | 'blue' = 'light';
 
   ngOnInit(): void {
-
+    this.loadTheme();
     this.loadDashboard();
   }
-
 
   loadDashboard(): void {
 
@@ -65,7 +62,6 @@ export class DashboardComponent implements OnInit {
 
     const establishmentId =
       this.appContext.establishmentId();
-
 
     this.dashboardService
       .getSummary(establishmentId)
@@ -94,7 +90,6 @@ export class DashboardComponent implements OnInit {
       });
   }
 
-
   formatAmount(
     amount: number | null | undefined
   ): string {
@@ -107,10 +102,8 @@ export class DashboardComponent implements OnInit {
       {
         maximumFractionDigits: 0
       }
-    ).format(value)
-      + ' XOF';
+    ).format(value) + ' XOF';
   }
-
 
   transactionClass(
     transaction: DashboardRecentTransaction
@@ -121,7 +114,6 @@ export class DashboardComponent implements OnInit {
       : 'expense';
   }
 
-
   transactionSign(
     transaction: DashboardRecentTransaction
   ): string {
@@ -129,5 +121,152 @@ export class DashboardComponent implements OnInit {
     return transaction.type === 'INCOME'
       ? '+'
       : '-';
+  }
+
+  get incomePercentage(): number {
+
+    if (!this.summary) {
+      return 0;
+    }
+
+    const total =
+      Number(this.summary.totalIncome) +
+      Number(this.summary.totalExpenses);
+
+    if (total <= 0) {
+      return 0;
+    }
+
+    return Math.round(
+      (Number(this.summary.totalIncome) / total) * 100
+    );
+  }
+
+  get expensePercentage(): number {
+
+    if (!this.summary) {
+      return 0;
+    }
+
+    const total =
+      Number(this.summary.totalIncome) +
+      Number(this.summary.totalExpenses);
+
+    if (total <= 0) {
+      return 0;
+    }
+
+    return Math.round(
+      (Number(this.summary.totalExpenses) / total) * 100
+    );
+  }
+
+  get budgetConsumedPercentage(): number {
+
+    if (!this.summary) {
+      return 0;
+    }
+
+    const budget =
+      Number(this.summary.budgetAmount);
+
+    if (budget <= 0) {
+      return 0;
+    }
+
+    return Math.min(
+      100,
+      Math.round(
+        (Number(this.summary.budgetConsumed) / budget) * 100
+      )
+    );
+  }
+
+  get budgetCommittedPercentage(): number {
+
+    if (!this.summary) {
+      return 0;
+    }
+
+    const budget =
+      Number(this.summary.budgetAmount);
+
+    if (budget <= 0) {
+      return 0;
+    }
+
+    return Math.min(
+      100,
+      Math.round(
+        (Number(this.summary.budgetCommitted) / budget) * 100
+      )
+    );
+  }
+
+  get budgetAvailablePercentage(): number {
+
+    if (!this.summary) {
+      return 0;
+    }
+
+    const budget =
+      Number(this.summary.budgetAmount);
+
+    if (budget <= 0) {
+      return 0;
+    }
+
+    return Math.min(
+      100,
+      Math.round(
+        (Number(this.summary.budgetAvailable) / budget) * 100
+      )
+    );
+  }
+
+  setTheme(
+    theme: 'light' | 'dark' | 'blue'
+  ): void {
+
+    this.currentTheme = theme;
+
+    localStorage.setItem(
+      'school-finance-theme',
+      theme
+    );
+
+    document.body.setAttribute(
+      'data-theme',
+      theme
+    );
+  }
+
+  loadTheme(): void {
+
+    const savedTheme =
+      localStorage.getItem(
+        'school-finance-theme'
+      );
+
+    if (
+      savedTheme === 'dark' ||
+      savedTheme === 'blue'
+    ) {
+
+      this.currentTheme =
+        savedTheme;
+    }
+
+    document.body.setAttribute(
+      'data-theme',
+      this.currentTheme
+    );
+  }
+
+  toggleSidebar(): void {
+
+    document.body.classList.toggle(
+      'sidebar-collapsed'
+    );
   }
 }

@@ -15,6 +15,7 @@ import {
 
 import {
   Enrollment,
+  EnrollmentRequest,
   Student,
   StudentCreateRequest,
   StudentPage,
@@ -118,6 +119,18 @@ export class StudentService {
 
     return this.http.get<Enrollment[]>(
       `${this.apiUrl}/${studentId}/enrollments`
+    );
+  }
+
+
+  enroll(
+    studentId: string,
+    request: EnrollmentRequest
+  ): Observable<Enrollment> {
+
+    return this.http.post<Enrollment>(
+      `${this.apiUrl}/${studentId}/enrollments`,
+      request
     );
   }
 }

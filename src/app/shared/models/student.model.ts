@@ -146,3 +146,15 @@ export interface Enrollment {
 
   notes: string | null;
 }
+
+
+export interface EnrollmentRequest {
+
+  academicYearId: string;
+
+  schoolClassId: string;
+
+  enrollmentDate: string | null;
+
+  notes: string | null;
+}

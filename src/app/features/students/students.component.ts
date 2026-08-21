@@ -39,10 +39,27 @@ import {
 } from '../../core/auth/auth.service';
 
 import {
+  AcademicYearService
+} from '../../core/services/academic-year.service';
+
+import {
+  SchoolClassService
+} from '../../core/services/school-class.service';
+
+import {
+  Enrollment,
   Student,
   StudentCreateRequest,
   StudentUpdateRequest
 } from '../../shared/models/student.model';
+
+import {
+  AcademicYear
+} from '../../shared/models/academic-year.model';
+
+import {
+  SchoolClass
+} from '../../shared/models/school-class.model';
 
 
 @Component({
@@ -72,6 +89,12 @@ export class StudentsComponent implements OnInit {
   private readonly authService =
     inject(AuthService);
 
+  private readonly academicYearService =
+    inject(AcademicYearService);
+
+  private readonly schoolClassService =
+    inject(SchoolClassService);
+
   private readonly fb =
     inject(FormBuilder);
 
@@ -96,6 +119,8 @@ export class StudentsComponent implements OnInit {
 
   formVisible = false;
 
+  generatingRegistrationNumber = false;
+
 
   page = 0;
 
@@ -104,6 +129,53 @@ export class StudentsComponent implements OnInit {
   totalPages = 0;
 
   totalElements = 0;
+
+
+  readonly nationalities: string[] = [
+
+    'Senegalaise',
+    'Malienne',
+    'Mauritanienne',
+    'Gambienne',
+    'Guineenne',
+    'Bissau-Guineenne',
+    'Ivoirienne',
+    'Burkinabe',
+    'Nigerienne',
+    'Togolaise',
+    'Beninoise',
+    'Ghaneenne',
+    'Camerounaise',
+    'Marocaine',
+    'Francaise',
+    'Autre'
+
+  ];
+
+
+  // ---- Inscription ----
+
+  enrollingStudent: Student | null = null;
+
+  enrollFormVisible = false;
+
+  academicYears: AcademicYear[] = [];
+
+  schoolClasses: SchoolClass[] = [];
+
+  studentEnrollments: Enrollment[] = [];
+
+  loadingAcademicYears = false;
+
+  loadingClasses = false;
+
+  loadingEnrollments = false;
+
+  savingEnrollment = false;
+
+  enrollError = '';
+
+  enrollSuccess = '';
 
 
   readonly studentForm =
@@ -170,6 +242,30 @@ export class StudentsComponent implements OnInit {
     });
 
 
+  readonly enrollForm =
+    this.fb.nonNullable.group({
+
+      academicYearId: [
+        '',
+        [
+          Validators.required
+        ]
+      ],
+
+      schoolClassId: [
+        '',
+        [
+          Validators.required
+        ]
+      ],
+
+      enrollmentDate: [''],
+
+      notes: ['']
+
+    });
+
+
   get canCreate(): boolean {
 
     return this.authService
@@ -181,6 +277,13 @@ export class StudentsComponent implements OnInit {
 
     return this.authService
       .hasPermission('STUDENT_UPDATE');
+  }
+
+
+  get canEnroll(): boolean {
+
+    return this.authService
+      .hasPermission('STUDENT_ENROLL');
   }
 
 
@@ -229,12 +332,12 @@ export class StudentsComponent implements OnInit {
       error: error => {
 
         console.error(
-          'Erreur chargement élèves',
+          'Erreur chargement eleves',
           error
         );
 
         this.errorMessage =
-          'Impossible de charger la liste des élèves.';
+          'Impossible de charger la liste des eleves.';
 
         this.loading = false;
       }
@@ -287,10 +390,62 @@ export class StudentsComponent implements OnInit {
     this.studentForm
       .controls
       .registrationNumber
-      .enable();
+      .disable();
 
 
     this.formVisible = true;
+
+
+    this.generateRegistrationNumber();
+  }
+
+
+  private generateRegistrationNumber(): void {
+
+    this.generatingRegistrationNumber = true;
+
+
+    this.studentService
+      .findAll(0, 1)
+      .pipe(
+        finalize(() => {
+          this.generatingRegistrationNumber = false;
+        })
+      )
+      .subscribe({
+
+        next: page => {
+
+          this.applyGeneratedNumber(
+            (page.totalElements ?? 0) + 1
+          );
+        },
+
+        error: () => {
+
+          this.applyGeneratedNumber(1);
+        }
+
+      });
+  }
+
+
+  private applyGeneratedNumber(
+    sequence: number
+  ): void {
+
+    const year =
+      new Date().getFullYear();
+
+    const padded =
+      sequence
+        .toString()
+        .padStart(4, '0');
+
+    this.studentForm.patchValue({
+      registrationNumber:
+        `ELV-${year}-${padded}`
+    });
   }
 
 
@@ -326,7 +481,7 @@ export class StudentsComponent implements OnInit {
         student.placeOfBirth ?? '',
 
       nationality:
-        student.nationality ?? '',
+        student.nationality ?? 'Senegalaise',
 
       phone:
         student.phone ?? '',
@@ -491,7 +646,7 @@ export class StudentsComponent implements OnInit {
         next: student => {
 
           this.successMessage =
-            `Élève ${student.registrationNumber} créé avec succès.`;
+            `Eleve ${student.registrationNumber} cree avec succes.`;
 
           this.formVisible = false;
 
@@ -597,7 +752,7 @@ export class StudentsComponent implements OnInit {
         next: student => {
 
           this.successMessage =
-            `Élève ${student.registrationNumber} modifié avec succès.`;
+            `Eleve ${student.registrationNumber} modifie avec succes.`;
 
           this.formVisible = false;
 
@@ -620,7 +775,7 @@ export class StudentsComponent implements OnInit {
   ): void {
 
     console.error(
-      'Erreur sauvegarde élève',
+      'Erreur sauvegarde eleve',
       error
     );
 
@@ -629,7 +784,13 @@ export class StudentsComponent implements OnInit {
 
       this.formError =
         error.error?.message
-        ?? 'Un élève avec ce matricule existe déjà.';
+        ?? 'Un eleve avec ce matricule existe deja. Un nouveau matricule va etre genere.';
+
+
+      if (!this.editingStudent) {
+
+        this.generateRegistrationNumber();
+      }
 
       return;
     }
@@ -638,7 +799,7 @@ export class StudentsComponent implements OnInit {
     if (error.status === 403) {
 
       this.formError =
-        'Vous ne disposez pas des droits nécessaires.';
+        'Vous ne disposez pas des droits necessaires.';
 
       return;
     }
@@ -655,7 +816,7 @@ export class StudentsComponent implements OnInit {
 
 
     this.formError =
-      'Impossible d’enregistrer l’élève.';
+      "Impossible d'enregistrer l'eleve.";
   }
 
 
@@ -709,12 +870,16 @@ export class StudentsComponent implements OnInit {
   ): void {
 
     this.selectedStudent = student;
+
+    this.loadEnrollmentsFor(student);
   }
 
 
   closeDetails(): void {
 
     this.selectedStudent = null;
+
+    this.studentEnrollments = [];
   }
 
 
@@ -736,7 +901,7 @@ export class StudentsComponent implements OnInit {
         return 'Masculin';
 
       case 'FEMALE':
-        return 'Féminin';
+        return 'Feminin';
 
       default:
         return gender || '-';
@@ -760,7 +925,7 @@ export class StudentsComponent implements OnInit {
         return 'Suspendu';
 
       case 'GRADUATED':
-        return 'Diplômé';
+        return 'Diplome';
 
       default:
         return status || '-';
@@ -781,5 +946,334 @@ export class StudentsComponent implements OnInit {
     }
 
     return value.trim();
+  }
+
+
+  // ---- Inscription ----
+
+  private loadEnrollmentsFor(
+    student: Student
+  ): void {
+
+    this.loadingEnrollments = true;
+
+
+    this.studentService
+      .getEnrollments(
+        student.id
+      )
+      .pipe(
+        finalize(() => {
+          this.loadingEnrollments = false;
+        })
+      )
+      .subscribe({
+
+        next: enrollments => {
+
+          this.studentEnrollments = enrollments;
+        },
+
+        error: () => {
+
+          this.studentEnrollments = [];
+        }
+
+      });
+  }
+
+
+  openEnrollForm(
+    student: Student
+  ): void {
+
+    this.enrollingStudent = student;
+
+    this.enrollError = '';
+
+    this.enrollSuccess = '';
+
+    this.schoolClasses = [];
+
+    this.enrollForm.reset({
+
+      academicYearId: '',
+
+      schoolClassId: '',
+
+      enrollmentDate: '',
+
+      notes: ''
+
+    });
+
+    this.enrollFormVisible = true;
+
+
+    this.loadAcademicYearsForEnroll();
+  }
+
+
+  closeEnrollForm(): void {
+
+    if (this.savingEnrollment) {
+      return;
+    }
+
+    this.enrollFormVisible = false;
+
+    this.enrollingStudent = null;
+
+    this.enrollError = '';
+  }
+
+
+  private loadAcademicYearsForEnroll(): void {
+
+    this.loadingAcademicYears = true;
+
+
+    this.academicYearService
+      .findAll(
+        this.appContext.establishmentId()
+      )
+      .pipe(
+        finalize(() => {
+          this.loadingAcademicYears = false;
+        })
+      )
+      .subscribe({
+
+        next: years => {
+
+          this.academicYears = years;
+
+          const current =
+            years.find(y => y.currentYear);
+
+          const yearId =
+            current
+              ? current.id
+              : (years[0]?.id ?? '');
+
+          this.enrollForm.patchValue({
+            academicYearId: yearId
+          });
+
+          if (yearId) {
+
+            this.loadClassesForYear(
+              yearId
+            );
+          }
+        },
+
+        error: () => {
+
+          this.enrollError =
+            'Impossible de charger les annees academiques.';
+        }
+
+      });
+  }
+
+
+  onEnrollYearChange(): void {
+
+    const yearId =
+      this.enrollForm.controls.academicYearId.value;
+
+    this.enrollForm.patchValue({
+      schoolClassId: ''
+    });
+
+    if (yearId) {
+
+      this.loadClassesForYear(
+        yearId
+      );
+
+    }
+    else {
+
+      this.schoolClasses = [];
+    }
+  }
+
+
+  private loadClassesForYear(
+    academicYearId: string
+  ): void {
+
+    this.loadingClasses = true;
+
+
+    this.schoolClassService
+      .findAll(
+        this.appContext.establishmentId(),
+        academicYearId
+      )
+      .pipe(
+        finalize(() => {
+          this.loadingClasses = false;
+        })
+      )
+      .subscribe({
+
+        next: classes => {
+
+          this.schoolClasses = classes;
+        },
+
+        error: () => {
+
+          this.schoolClasses = [];
+        }
+
+      });
+  }
+
+
+  submitEnroll(): void {
+
+    if (!this.enrollingStudent) {
+      return;
+    }
+
+
+    this.enrollError = '';
+
+
+    if (this.enrollForm.invalid) {
+
+      this.enrollForm.markAllAsTouched();
+
+      return;
+    }
+
+
+    this.savingEnrollment = true;
+
+
+    const value =
+      this.enrollForm.getRawValue();
+
+
+    const request = {
+
+      academicYearId:
+        value.academicYearId,
+
+      schoolClassId:
+        value.schoolClassId,
+
+      enrollmentDate:
+        this.nullIfEmpty(
+          value.enrollmentDate
+        ),
+
+      notes:
+        this.nullIfEmpty(
+          value.notes
+        )
+
+    };
+
+
+    this.studentService
+      .enroll(
+        this.enrollingStudent.id,
+        request
+      )
+      .pipe(
+        finalize(() => {
+          this.savingEnrollment = false;
+        })
+      )
+      .subscribe({
+
+        next: enrollment => {
+
+          this.enrollSuccess =
+            `Inscription confirmee en ${enrollment.schoolClass}.`;
+
+          this.enrollFormVisible = false;
+
+
+          if (
+            this.selectedStudent &&
+            this.enrollingStudent &&
+            this.selectedStudent.id === this.enrollingStudent.id
+          ) {
+
+            this.loadEnrollmentsFor(
+              this.selectedStudent
+            );
+          }
+
+          this.enrollingStudent = null;
+        },
+
+        error: (error: HttpErrorResponse) => {
+
+          console.error(
+            'Erreur inscription eleve',
+            error
+          );
+
+
+          if (error.status === 409) {
+
+            this.enrollError =
+              error.error?.message
+              ?? "L'eleve est deja inscrit pour cette annee academique.";
+
+            return;
+          }
+
+
+          if (error.status === 400) {
+
+            this.enrollError =
+              error.error?.message
+              ?? 'Les informations saisies sont invalides.';
+
+            return;
+          }
+
+
+          this.enrollError =
+            error.error?.message
+            ?? "Impossible d'inscrire l'eleve.";
+        }
+
+      });
+  }
+
+
+  enrollmentStatusLabel(
+    status: string
+  ): string {
+
+    switch (status) {
+
+      case 'PENDING':
+        return 'En attente';
+
+      case 'ACTIVE':
+        return 'Active';
+
+      case 'COMPLETED':
+        return 'Terminee';
+
+      case 'CANCELLED':
+        return 'Annulee';
+
+      case 'TRANSFERRED':
+        return 'Transfert';
+
+      default:
+        return status || '-';
+    }
   }
 }

@@ -1,0 +1,274 @@
+﻿<section class="permissions-page">
+
+  <div class="page-header">
+
+    <div>
+
+      <h2>
+        Permissions
+      </h2>
+
+      <p>
+        Définissez précisément ce que chaque rôle peut consulter
+        et effectuer dans l'application.
+      </p>
+
+    </div>
+
+    <button
+      class="primary-button"
+      type="button"
+      (click)="save()">
+
+      Enregistrer
+
+    </button>
+
+  </div>
+
+
+  <div class="permissions-layout">
+
+
+    <!-- ================================================= -->
+    <!-- ROLES -->
+    <!-- ================================================= -->
+
+    <aside class="roles-sidebar">
+
+      <div class="sidebar-title">
+
+        <strong>
+          Rôles
+        </strong>
+
+        <span>
+          {{ roles.length }}
+        </span>
+
+      </div>
+
+
+      <button
+        type="button"
+        class="role-selector"
+        *ngFor="let role of roles"
+        [class.active]="selectedRole?.id === role.id"
+        (click)="selectRole(role)">
+
+        <span class="role-avatar">
+          {{ role.name.charAt(0).toUpperCase() }}
+        </span>
+
+        <span class="role-info">
+
+          <strong>
+            {{ role.name }}
+          </strong>
+
+          <small>
+            {{ role.code }}
+          </small>
+
+        </span>
+
+      </button>
+
+    </aside>
+
+
+    <!-- ================================================= -->
+    <!-- MATRICE -->
+    <!-- ================================================= -->
+
+    <main class="matrix-panel"
+          *ngIf="selectedRole as role">
+
+
+      <div class="matrix-header">
+
+        <div>
+
+          <h3>
+            Matrice des permissions
+          </h3>
+
+          <p>
+            Rôle :
+            <strong>
+              {{ role.name }}
+            </strong>
+          </p>
+
+        </div>
+
+
+        <div class="matrix-actions">
+
+          <button
+            type="button"
+            (click)="selectAll()">
+
+            Tout sélectionner
+
+          </button>
+
+          <button
+            type="button"
+            (click)="clearAll()">
+
+            Tout désélectionner
+
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div class="matrix-wrapper">
+
+        <table class="permission-table">
+
+          <thead>
+
+            <tr>
+
+              <th class="module-column">
+                Module
+              </th>
+
+              <th
+                *ngFor="let action of permissionService.actions"
+                class="action-column">
+
+                <label>
+
+                  <input
+                    type="checkbox"
+                    [checked]="actionSelected(action)"
+                    (change)="toggleAction(action)">
+
+                  <span>
+                    {{ actionLabel(action) }}
+                  </span>
+
+                </label>
+
+              </th>
+
+            </tr>
+
+          </thead>
+
+
+          <tbody>
+
+            <tr
+              *ngFor="let module of modules">
+
+              <td class="module-cell">
+
+                <div class="module-name">
+
+                  <strong>
+                    {{ module.name }}
+                  </strong>
+
+                  <small>
+                    {{ module.description }}
+                  </small>
+
+                </div>
+
+
+                <button
+                  type="button"
+                  class="module-all"
+                  (click)="toggleModule(module)">
+
+                  {{
+                    allSelected(module)
+                      ? 'Tout retirer'
+                      : 'Tout sélectionner'
+                  }}
+
+                </button>
+
+              </td>
+
+
+              <td
+                *ngFor="
+                  let action of permissionService.actions
+                "
+                class="permission-cell">
+
+                <ng-container
+                  *ngIf="
+                    module.actions.includes(action);
+                    else unavailable
+                  ">
+
+                  <label class="permission-checkbox">
+
+                    <input
+                      type="checkbox"
+                      [checked]="
+                        hasPermission(
+                          module,
+                          action
+                        )
+                      "
+                      (change)="
+                        togglePermission(
+                          module,
+                          action
+                        )
+                      ">
+
+                    <span></span>
+
+                  </label>
+
+                </ng-container>
+
+
+                <ng-template #unavailable>
+
+                  <span class="not-available">
+                    —
+                  </span>
+
+                </ng-template>
+
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+
+      <div class="permission-summary">
+
+        <strong>
+          {{ selectedPermissions.size }}
+        </strong>
+
+        <span>
+          permissions sélectionnées pour
+          {{ role.name }}
+        </span>
+
+      </div>
+
+
+    </main>
+
+  </div>
+
+</section>

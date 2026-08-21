@@ -587,3 +587,90 @@ tbody tr:hover {
         grid-column: auto;
     }
 }
+
+
+/* ============================================================
+   ENROLLMENTS
+   ============================================================ */
+
+.enrollment-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.enrollment-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 10px 12px;
+
+    border: 1px solid #eaecf0;
+    border-radius: 8px;
+
+    background: #f9fafb;
+}
+
+.enrollment-list li > div {
+    display: flex;
+    flex-direction: column;
+}
+
+.enrollment-list li strong {
+    color: #344054;
+    font-size: 10px;
+}
+
+.enrollment-list li span {
+    margin-top: 2px;
+    color: #98a2b3;
+    font-size: 9px;
+}
+
+.enrollment-status {
+    padding: 4px 10px;
+
+    border-radius: 999px;
+
+    font-size: 9px;
+    font-weight: 600;
+
+    background: #f2f4f7;
+    color: #475467;
+}
+
+.enrollment-status[data-status="ACTIVE"] {
+    background: #ecfdf3;
+    color: #027a48;
+}
+
+.enrollment-status[data-status="CANCELLED"] {
+    background: #fef3f2;
+    color: #b42318;
+}
+
+.enrollment-status[data-status="PENDING"] {
+    background: #fffaeb;
+    color: #b54708;
+}
+
+.empty-enrollments {
+    padding: 12px 0;
+
+    color: #98a2b3;
+
+    font-size: 10px;
+}
+
+.field-hint {
+    margin-top: 4px;
+
+    color: #b54708;
+
+    font-size: 9px;
+}

@@ -3,38 +3,23 @@
     <div class="page-header">
 
         <div>
-
-            <h2>
-                Gestion des élèves
-            </h2>
-
-            <p>
-                Consultation et administration
-                des dossiers élèves
-            </p>
-
+            <h2>Gestion des eleves</h2>
+            <p>Consultation et administration des dossiers eleves</p>
         </div>
-
 
         <button
             *ngIf="canCreate"
             type="button"
             class="primary-button"
             (click)="openCreateForm()">
-
-            + Nouvel élève
-
+            + Nouvel eleve
         </button>
 
     </div>
 
 
-    <div
-        *ngIf="successMessage"
-        class="success-box">
-
+    <div *ngIf="successMessage" class="success-box">
         {{ successMessage }}
-
     </div>
 
 
@@ -46,235 +31,126 @@
                 type="text"
                 [(ngModel)]="searchQuery"
                 (keyup.enter)="search()"
-                placeholder="Rechercher par matricule, nom ou prénom...">
+                placeholder="Rechercher par matricule, nom ou prenom...">
 
-
-            <button
-                type="button"
-                (click)="search()">
-
+            <button type="button" (click)="search()">
                 Rechercher
-
             </button>
-
 
             <button
                 *ngIf="searchQuery"
                 type="button"
                 class="secondary-button"
                 (click)="clearSearch()">
-
                 Effacer
-
             </button>
 
         </div>
 
-
         <div class="student-count">
-
-            {{ totalElements }}
-            élève(s)
-
+            {{ totalElements }} eleve(s)
         </div>
 
     </div>
 
 
-    <div
-        *ngIf="errorMessage"
-        class="error-box">
-
+    <div *ngIf="errorMessage" class="error-box">
         {{ errorMessage }}
-
     </div>
 
 
     <div class="table-card">
 
-        <div
-            *ngIf="loading"
-            class="loading">
-
-            Chargement des élèves...
-
+        <div *ngIf="loading" class="loading">
+            Chargement des eleves...
         </div>
 
-
-        <div
-            *ngIf="
-                !loading &&
-                students.length === 0
-            "
-            class="empty">
-
-            Aucun élève trouvé.
-
+        <div *ngIf="!loading && students.length === 0" class="empty">
+            Aucun eleve trouve.
         </div>
 
-
-        <div
-            *ngIf="
-                !loading &&
-                students.length > 0
-            "
-            class="table-wrapper">
+        <div *ngIf="!loading && students.length > 0" class="table-wrapper">
 
             <table>
-
                 <thead>
-
                     <tr>
-
                         <th>Matricule</th>
-                        <th>Élève</th>
+                        <th>Eleve</th>
                         <th>Sexe</th>
-                        <th>Téléphone</th>
+                        <th>Telephone</th>
                         <th>Responsable</th>
                         <th>Statut</th>
                         <th></th>
-
                     </tr>
-
                 </thead>
 
-
                 <tbody>
-
-                    <tr
-                        *ngFor="let student of students">
+                    <tr *ngFor="let student of students">
 
                         <td>
-
                             <strong class="registration">
                                 {{ student.registrationNumber }}
                             </strong>
-
                         </td>
 
-
                         <td>
-
                             <div class="student-cell">
-
                                 <div class="avatar">
-
-                                    {{ student.firstName.charAt(0) }}
-                                    {{ student.lastName.charAt(0) }}
-
+                                    {{ student.firstName.charAt(0) }}{{ student.lastName.charAt(0) }}
                                 </div>
-
-
                                 <div>
-
-                                    <strong>
-                                        {{ fullName(student) }}
-                                    </strong>
-
-                                    <span>
-                                        {{ student.email || 'Aucun email' }}
-                                    </span>
-
+                                    <strong>{{ fullName(student) }}</strong>
+                                    <span>{{ student.email || 'Aucun email' }}</span>
                                 </div>
-
                             </div>
-
                         </td>
 
+                        <td>{{ genderLabel(student.gender) }}</td>
+
+                        <td>{{ student.phone || '-' }}</td>
 
                         <td>
-                            {{ genderLabel(student.gender) }}
-                        </td>
-
-
-                        <td>
-                            {{ student.phone || '-' }}
-                        </td>
-
-
-                        <td>
-
                             <div class="guardian">
-
-                                <strong>
-                                    {{ student.guardianName || '-' }}
-                                </strong>
-
-                                <span>
-                                    {{ student.guardianPhone || '' }}
-                                </span>
-
+                                <strong>{{ student.guardianName || '-' }}</strong>
+                                <span>{{ student.guardianPhone || '' }}</span>
                             </div>
-
                         </td>
 
-
                         <td>
-
                             <span
                                 class="status"
                                 [class.active]="student.status === 'ACTIVE'"
                                 [class.inactive]="student.status !== 'ACTIVE'">
-
                                 {{ statusLabel(student.status) }}
-
                             </span>
-
                         </td>
 
-
                         <td>
-
                             <button
                                 type="button"
                                 class="view-button"
                                 (click)="selectStudent(student)">
-
                                 Voir
-
                             </button>
-
                         </td>
 
                     </tr>
-
                 </tbody>
-
             </table>
 
         </div>
 
+        <div *ngIf="totalPages > 0" class="pagination">
 
-        <div
-            *ngIf="totalPages > 0"
-            class="pagination">
-
-            <span>
-                Page {{ page + 1 }} sur {{ totalPages }}
-            </span>
-
+            <span>Page {{ page + 1 }} sur {{ totalPages }}</span>
 
             <div>
-
-                <button
-                    type="button"
-                    [disabled]="page === 0"
-                    (click)="previousPage()">
-
-                    Précédent
-
+                <button type="button" [disabled]="page === 0" (click)="previousPage()">
+                    Precedent
                 </button>
-
-
-                <button
-                    type="button"
-                    [disabled]="page + 1 >= totalPages"
-                    (click)="nextPage()">
-
+                <button type="button" [disabled]="page + 1 >= totalPages" (click)="nextPage()">
                     Suivant
-
                 </button>
-
             </div>
 
         </div>
@@ -286,137 +162,107 @@
          DETAILS
          ====================================================== -->
 
-    <div
-        *ngIf="selectedStudent as student"
-        class="overlay"
-        (click)="closeDetails()">
+    <div *ngIf="selectedStudent as student" class="overlay" (click)="closeDetails()">
 
-        <div
-            class="details-panel"
-            (click)="$event.stopPropagation()">
+        <div class="details-panel" (click)="$event.stopPropagation()">
 
             <div class="details-header">
-
                 <div>
-
-                    <span class="details-label">
-                        FICHE ÉLÈVE
-                    </span>
-
-                    <h3>
-                        {{ fullName(student) }}
-                    </h3>
-
-                    <p>
-                        {{ student.registrationNumber }}
-                    </p>
-
+                    <span class="details-label">FICHE ELEVE</span>
+                    <h3>{{ fullName(student) }}</h3>
+                    <p>{{ student.registrationNumber }}</p>
                 </div>
 
-
-                <button
-                    type="button"
-                    class="close"
-                    (click)="closeDetails()">
-
-                    ×
-
-                </button>
-
+                <button type="button" class="close" (click)="closeDetails()">x</button>
             </div>
 
 
             <div class="details-section">
-
-                <h4>
-                    Informations personnelles
-                </h4>
-
+                <h4>Informations personnelles</h4>
                 <div class="details-grid">
-
                     <div>
                         <span>Sexe</span>
                         <strong>{{ genderLabel(student.gender) }}</strong>
                     </div>
-
                     <div>
                         <span>Date de naissance</span>
-                        <strong>
-                            {{
-                                student.dateOfBirth
-                                  ? (student.dateOfBirth | date:'dd/MM/yyyy')
-                                  : '-'
-                            }}
-                        </strong>
+                        <strong>{{ student.dateOfBirth ? (student.dateOfBirth | date:'dd/MM/yyyy') : '-' }}</strong>
                     </div>
-
                     <div>
                         <span>Lieu de naissance</span>
                         <strong>{{ student.placeOfBirth || '-' }}</strong>
                     </div>
-
                     <div>
-                        <span>Nationalité</span>
+                        <span>Nationalite</span>
                         <strong>{{ student.nationality || '-' }}</strong>
                     </div>
-
                 </div>
-
             </div>
 
 
             <div class="details-section">
-
-                <h4>
-                    Coordonnées
-                </h4>
-
+                <h4>Coordonnees</h4>
                 <div class="details-grid">
-
                     <div>
-                        <span>Téléphone</span>
+                        <span>Telephone</span>
                         <strong>{{ student.phone || '-' }}</strong>
                     </div>
-
                     <div>
                         <span>Email</span>
                         <strong>{{ student.email || '-' }}</strong>
                     </div>
-
                     <div class="full">
                         <span>Adresse</span>
                         <strong>{{ student.address || '-' }}</strong>
                     </div>
-
                 </div>
+            </div>
 
+
+            <div class="details-section">
+                <h4>Responsable / Tuteur</h4>
+                <div class="details-grid">
+                    <div>
+                        <span>Nom</span>
+                        <strong>{{ student.guardianName || '-' }}</strong>
+                    </div>
+                    <div>
+                        <span>Telephone</span>
+                        <strong>{{ student.guardianPhone || '-' }}</strong>
+                    </div>
+                    <div class="full">
+                        <span>Email</span>
+                        <strong>{{ student.guardianEmail || '-' }}</strong>
+                    </div>
+                </div>
             </div>
 
 
             <div class="details-section">
 
-                <h4>
-                    Responsable / Tuteur
-                </h4>
+                <h4>Inscriptions</h4>
 
-                <div class="details-grid">
-
-                    <div>
-                        <span>Nom</span>
-                        <strong>{{ student.guardianName || '-' }}</strong>
-                    </div>
-
-                    <div>
-                        <span>Téléphone</span>
-                        <strong>{{ student.guardianPhone || '-' }}</strong>
-                    </div>
-
-                    <div class="full">
-                        <span>Email</span>
-                        <strong>{{ student.guardianEmail || '-' }}</strong>
-                    </div>
-
+                <div *ngIf="loadingEnrollments" class="loading">
+                    Chargement des inscriptions...
                 </div>
+
+                <div *ngIf="!loadingEnrollments && studentEnrollments.length === 0" class="empty-enrollments">
+                    Aucune inscription enregistree.
+                </div>
+
+                <ul class="enrollment-list" *ngIf="!loadingEnrollments && studentEnrollments.length > 0">
+                    <li *ngFor="let enrollment of studentEnrollments">
+                        <div>
+                            <strong>{{ enrollment.academicYear }}</strong>
+                            <span>{{ enrollment.schoolClass }} ({{ enrollment.level }})</span>
+                        </div>
+                        <span class="enrollment-status" [attr.data-status]="enrollment.status">
+                            {{ enrollmentStatusLabel(enrollment.status) }}
+                        </span>
+                    </li>
+                </ul>
+
+                <p *ngIf="enrollSuccess" class="success-box form-message">{{ enrollSuccess }}</p>
 
             </div>
 
@@ -428,18 +274,15 @@
                     type="button"
                     class="secondary-button"
                     (click)="openEditForm(student)">
-
                     Modifier
-
                 </button>
 
-
                 <button
+                    *ngIf="canEnroll"
                     type="button"
-                    class="primary-button">
-
-                    Inscriptions
-
+                    class="primary-button"
+                    (click)="openEnrollForm(student)">
+                    Inscrire
                 </button>
 
             </div>
@@ -453,344 +296,219 @@
          CREATE / UPDATE FORM
          ====================================================== -->
 
-    <div
-        *ngIf="formVisible"
-        class="overlay"
-        (click)="closeForm()">
+    <div *ngIf="formVisible" class="overlay" (click)="closeForm()">
 
-        <div
-            class="form-panel"
-            (click)="$event.stopPropagation()">
+        <div class="form-panel" (click)="$event.stopPropagation()">
 
             <div class="details-header">
-
                 <div>
-
-                    <span class="details-label">
-                        DOSSIER ÉLÈVE
-                    </span>
-
-                    <h3>
-                        {{
-                            editingStudent
-                              ? 'Modifier l’élève'
-                              : 'Nouvel élève'
-                        }}
-                    </h3>
-
-                    <p>
-                        {{
-                            editingStudent
-                              ? editingStudent.registrationNumber
-                              : 'Création d’un nouveau dossier'
-                        }}
-                    </p>
-
+                    <span class="details-label">DOSSIER ELEVE</span>
+                    <h3>{{ editingStudent ? "Modifier l'eleve" : 'Nouvel eleve' }}</h3>
+                    <p>{{ editingStudent ? editingStudent.registrationNumber : "Creation d'un nouveau dossier" }}</p>
                 </div>
 
-
-                <button
-                    type="button"
-                    class="close"
-                    (click)="closeForm()">
-
-                    ×
-
-                </button>
-
+                <button type="button" class="close" (click)="closeForm()">x</button>
             </div>
 
+            <div *ngIf="formError" class="error-box form-message">{{ formError }}</div>
 
-            <div
-                *ngIf="formError"
-                class="error-box form-message">
-
-                {{ formError }}
-
-            </div>
-
-
-            <form
-                [formGroup]="studentForm"
-                (ngSubmit)="saveStudent()">
-
+            <form [formGroup]="studentForm" (ngSubmit)="saveStudent()">
 
                 <div class="form-section">
-
-                    <h4>
-                        Identification
-                    </h4>
-
+                    <h4>Identification</h4>
 
                     <div class="form-grid">
 
                         <div class="field">
-
-                            <label>
-                                Matricule *
-                            </label>
-
-                            <input
-                                type="text"
-                                formControlName="registrationNumber">
-
+                            <label>Matricule (genere automatiquement)</label>
+                            <input type="text" formControlName="registrationNumber" readonly>
+                            <span class="field-hint" *ngIf="generatingRegistrationNumber">Generation en cours...</span>
                         </div>
 
-
                         <div class="field">
-
-                            <label>
-                                Sexe *
-                            </label>
-
+                            <label>Sexe *</label>
                             <select formControlName="gender">
-
-                                <option value="MALE">
-                                    Masculin
-                                </option>
-
-                                <option value="FEMALE">
-                                    Féminin
-                                </option>
-
+                                <option value="MALE">Masculin</option>
+                                <option value="FEMALE">Feminin</option>
                             </select>
-
                         </div>
-
 
                         <div class="field">
-
-                            <label>
-                                Prénom *
-                            </label>
-
-                            <input
-                                type="text"
-                                formControlName="firstName">
-
+                            <label>Prenom *</label>
+                            <input type="text" formControlName="firstName">
                         </div>
-
 
                         <div class="field">
-
-                            <label>
-                                Nom *
-                            </label>
-
-                            <input
-                                type="text"
-                                formControlName="lastName">
-
+                            <label>Nom *</label>
+                            <input type="text" formControlName="lastName">
                         </div>
-
 
                         <div class="field">
-
-                            <label>
-                                Date de naissance
-                            </label>
-
-                            <input
-                                type="date"
-                                formControlName="dateOfBirth">
-
+                            <label>Date de naissance</label>
+                            <input type="date" formControlName="dateOfBirth">
                         </div>
-
 
                         <div class="field">
-
-                            <label>
-                                Lieu de naissance
-                            </label>
-
-                            <input
-                                type="text"
-                                formControlName="placeOfBirth">
-
+                            <label>Lieu de naissance</label>
+                            <input type="text" formControlName="placeOfBirth">
                         </div>
-
 
                         <div class="field">
-
-                            <label>
-                                Nationalité
-                            </label>
-
-                            <input
-                                type="text"
-                                formControlName="nationality">
-
+                            <label>Nationalite</label>
+                            <select formControlName="nationality">
+                                <option *ngFor="let nat of nationalities" [value]="nat">{{ nat }}</option>
+                            </select>
                         </div>
 
-
-                        <div
-                            *ngIf="editingStudent"
-                            class="field">
-
-                            <label>
-                                Statut
-                            </label>
-
+                        <div *ngIf="editingStudent" class="field">
+                            <label>Statut</label>
                             <select formControlName="status">
-
-                                <option value="ACTIVE">
-                                    Actif
-                                </option>
-
-                                <option value="INACTIVE">
-                                    Inactif
-                                </option>
-
-                                <option value="SUSPENDED">
-                                    Suspendu
-                                </option>
-
-                                <option value="GRADUATED">
-                                    Diplômé
-                                </option>
-
+                                <option value="ACTIVE">Actif</option>
+                                <option value="INACTIVE">Inactif</option>
+                                <option value="SUSPENDED">Suspendu</option>
+                                <option value="GRADUATED">Diplome</option>
                             </select>
-
                         </div>
 
                     </div>
-
                 </div>
 
-
                 <div class="form-section">
-
-                    <h4>
-                        Coordonnées
-                    </h4>
+                    <h4>Coordonnees</h4>
 
                     <div class="form-grid">
 
                         <div class="field">
-
-                            <label>
-                                Téléphone
-                            </label>
-
-                            <input
-                                type="text"
-                                formControlName="phone">
-
+                            <label>Telephone</label>
+                            <input type="text" formControlName="phone">
                         </div>
-
 
                         <div class="field">
-
-                            <label>
-                                Email
-                            </label>
-
-                            <input
-                                type="email"
-                                formControlName="email">
-
+                            <label>Email</label>
+                            <input type="email" formControlName="email">
                         </div>
 
-
                         <div class="field full">
-
-                            <label>
-                                Adresse
-                            </label>
-
-                            <textarea
-                                rows="2"
-                                formControlName="address">
-                            </textarea>
-
+                            <label>Adresse</label>
+                            <textarea rows="2" formControlName="address"></textarea>
                         </div>
 
                     </div>
-
                 </div>
 
-
                 <div class="form-section">
-
-                    <h4>
-                        Responsable / Tuteur
-                    </h4>
+                    <h4>Responsable / Tuteur</h4>
 
                     <div class="form-grid">
 
                         <div class="field">
-
-                            <label>
-                                Nom du responsable
-                            </label>
-
-                            <input
-                                type="text"
-                                formControlName="guardianName">
-
+                            <label>Nom du responsable</label>
+                            <input type="text" formControlName="guardianName">
                         </div>
-
 
                         <div class="field">
-
-                            <label>
-                                Téléphone
-                            </label>
-
-                            <input
-                                type="text"
-                                formControlName="guardianPhone">
-
+                            <label>Telephone</label>
+                            <input type="text" formControlName="guardianPhone">
                         </div>
 
-
                         <div class="field full">
-
-                            <label>
-                                Email
-                            </label>
-
-                            <input
-                                type="email"
-                                formControlName="guardianEmail">
-
+                            <label>Email</label>
+                            <input type="email" formControlName="guardianEmail">
                         </div>
 
                     </div>
-
                 </div>
-
 
                 <div class="form-actions">
-
-                    <button
-                        type="button"
-                        class="secondary-button"
-                        [disabled]="saving"
-                        (click)="closeForm()">
-
+                    <button type="button" class="secondary-button" [disabled]="saving" (click)="closeForm()">
                         Annuler
-
                     </button>
-
-
-                    <button
-                        type="submit"
-                        class="primary-button"
-                        [disabled]="saving">
-
-                        {{
-                            saving
-                              ? 'Enregistrement...'
-                              : (
-                                  editingStudent
-                                    ? 'Enregistrer les modifications'
-                                    : 'Créer l’élève'
-                                )
-                        }}
-
+                    <button type="submit" class="primary-button" [disabled]="saving">
+                        {{ saving ? 'Enregistrement...' : (editingStudent ? 'Enregistrer les modifications' : "Creer l'eleve") }}
                     </button>
+                </div>
 
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- ======================================================
+         ENROLLMENT FORM
+         ====================================================== -->
+
+    <div *ngIf="enrollFormVisible" class="overlay" (click)="closeEnrollForm()">
+
+        <div class="form-panel" (click)="$event.stopPropagation()">
+
+            <div class="details-header">
+                <div>
+                    <span class="details-label">INSCRIPTION</span>
+                    <h3>Inscrire {{ enrollingStudent ? fullName(enrollingStudent) : '' }}</h3>
+                    <p>{{ enrollingStudent?.registrationNumber }}</p>
+                </div>
+
+                <button type="button" class="close" (click)="closeEnrollForm()">x</button>
+            </div>
+
+            <div *ngIf="enrollError" class="error-box form-message">{{ enrollError }}</div>
+
+            <form [formGroup]="enrollForm" (ngSubmit)="submitEnroll()">
+
+                <div class="form-section">
+                    <h4>Affectation</h4>
+
+                    <div class="form-grid">
+
+                        <div class="field">
+                            <label>Annee academique *</label>
+                            <select
+                                formControlName="academicYearId"
+                                (change)="onEnrollYearChange()">
+                                <option value="" disabled>Selectionnez...</option>
+                                <option *ngFor="let year of academicYears" [value]="year.id">
+                                    {{ year.label }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label>Classe *</label>
+                            <select formControlName="schoolClassId" [disabled]="loadingClasses">
+                                <option value="" disabled>
+                                    {{ loadingClasses ? 'Chargement...' : 'Selectionnez...' }}
+                                </option>
+                                <option *ngFor="let cls of schoolClasses" [value]="cls.id">
+                                    {{ cls.name }} ({{ cls.level }})
+                                </option>
+                            </select>
+                            <span class="field-hint" *ngIf="!loadingClasses && schoolClasses.length === 0">
+                                Aucune classe disponible pour cette annee.
+                            </span>
+                        </div>
+
+                        <div class="field">
+                            <label>Date d'inscription (optionnel)</label>
+                            <input type="date" formControlName="enrollmentDate">
+                        </div>
+
+                        <div class="field full">
+                            <label>Notes (optionnel)</label>
+                            <textarea rows="2" formControlName="notes"></textarea>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="secondary-button" [disabled]="savingEnrollment" (click)="closeEnrollForm()">
+                        Annuler
+                    </button>
+                    <button type="submit" class="primary-button" [disabled]="savingEnrollment">
+                        {{ savingEnrollment ? 'Inscription...' : "Confirmer l'inscription" }}
+                    </button>
                 </div>
 
             </form>
