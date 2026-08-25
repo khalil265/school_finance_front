@@ -132,11 +132,10 @@ export class SecurityComponent implements OnInit {
       email: [
         '',
         [
+          Validators.required,
           Validators.email
         ]
       ],
-
-      password: [''],
 
       firstName: [
         '',
@@ -351,8 +350,6 @@ export class SecurityComponent implements OnInit {
 
       email: '',
 
-      password: '',
-
       firstName: '',
 
       lastName: '',
@@ -360,13 +357,6 @@ export class SecurityComponent implements OnInit {
       phone: ''
 
     });
-
-    this.userForm.controls.password.addValidators([
-      Validators.required,
-      Validators.minLength(8)
-    ]);
-
-    this.userForm.controls.password.updateValueAndValidity();
 
     this.userForm.controls.username.enable();
 
@@ -392,8 +382,6 @@ export class SecurityComponent implements OnInit {
 
       email: user.email ?? '',
 
-      password: '',
-
       firstName: user.firstName,
 
       lastName: user.lastName,
@@ -401,10 +389,6 @@ export class SecurityComponent implements OnInit {
       phone: user.phone ?? ''
 
     });
-
-    this.userForm.controls.password.clearValidators();
-
-    this.userForm.controls.password.updateValueAndValidity();
 
     this.userForm.controls.username.disable();
 
@@ -531,10 +515,7 @@ export class SecurityComponent implements OnInit {
         value.username.trim(),
 
       email:
-        this.nullIfEmpty(value.email),
-
-      password:
-        value.password,
+        value.email.trim(),
 
       firstName:
         value.firstName.trim(),
@@ -562,7 +543,7 @@ export class SecurityComponent implements OnInit {
         next: user => {
 
           this.successMessage =
-            `Utilisateur "${user.username}" cree avec succes.`;
+            `Utilisateur "${user.username}" cree. Un email d'invitation lui a ete envoye pour activer son compte.`;
 
           this.userFormVisible = false;
 

@@ -1,0 +1,97 @@
+.activate-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  padding: 24px;
+}
+
+.activate-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 440px;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.activate-card h1 {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.loading {
+  text-align: center;
+  color: #6b7280;
+  padding: 24px 0;
+}
+
+.welcome-text {
+  color: #475467;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.field input {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  background: #1e293b;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #dc2626;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.error-panel {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  padding: 16px;
+  color: #b91c1c;
+  text-align: center;
+}
+
+.success-panel {
+  text-align: center;
+  padding: 12px 0;
+}
+
+.success-icon {
+  font-size: 40px;
+  color: #16a34a;
+  margin-bottom: 12px;
+}
+
+.success-panel h2 {
+  margin-bottom: 8px;
+}
+
+.success-panel p {
+  color: #6b7280;
+}

@@ -237,3 +237,9 @@ button:disabled {
   color: #6b7280;
   padding: 32px 0;
 }
+
+.form-hint {
+    color: #6b7280;
+    font-size: 12px;
+    margin-bottom: 12px;
+}

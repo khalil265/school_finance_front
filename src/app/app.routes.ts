@@ -1,4 +1,4 @@
-﻿import { PermissionsComponent } from './features/permissions/permissions.component';
+import { PermissionsComponent } from './features/permissions/permissions.component';
 import { RolesComponent } from './features/roles/roles.component';
 import { Routes } from '@angular/router';
 
@@ -23,6 +23,11 @@ import {
 import {
   VerifyReceiptComponent
 } from './features/verify-receipt/verify-receipt.component';
+
+
+import {
+  ActivateAccountComponent
+} from './features/activate-account/activate-account.component';
 
 import {
   MainLayoutComponent

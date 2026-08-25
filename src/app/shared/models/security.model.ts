@@ -98,9 +98,7 @@ export interface UserCreateRequest {
 
   username: string;
 
-  email: string | null;
-
-  password: string;
+  email: string;
 
   firstName: string;
 

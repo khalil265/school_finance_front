@@ -56,12 +56,11 @@
             <input id="phone" type="text" formControlName="phone" />
           </div>
 
-          <div class="form-row" *ngIf="!editingUser">
-            <label for="password">Mot de passe</label>
-            <input id="password" type="password" formControlName="password" />
-          </div>
-
         </div>
+
+        <p class="form-hint" *ngIf="!editingUser">
+          Un email d'invitation sera envoye a l'utilisateur pour qu'il definisse lui-meme son mot de passe.
+        </p>
 
         <div class="roles-select">
           <label>Roles</label>

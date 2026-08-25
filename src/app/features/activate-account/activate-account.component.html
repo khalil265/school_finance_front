@@ -1,0 +1,60 @@
+<div class="activate-page">
+
+  <div class="activate-card">
+
+    <h1>Activation du compte</h1>
+
+    <div *ngIf="checking" class="loading">
+      Verification du lien...
+    </div>
+
+    <div *ngIf="!checking && activated" class="success-panel">
+      <div class="success-icon">&#10003;</div>
+      <h2>Compte active avec succes</h2>
+      <p>Vous allez etre redirige vers la page de connexion...</p>
+    </div>
+
+    <div *ngIf="!checking && !activated && linkExpired" class="error-panel">
+      <p>Ce lien d'activation a expire. Contactez votre administrateur pour en recevoir un nouveau.</p>
+    </div>
+
+    <div *ngIf="!checking && !activated && !linkExpired && !linkValid" class="error-panel">
+      <p>{{ errorMessage || "Ce lien d'activation est invalide." }}</p>
+    </div>
+
+    <div *ngIf="!checking && !activated && linkValid" class="activate-form">
+
+      <p class="welcome-text">
+        Bonjour <strong>{{ firstName }}</strong>, definissez le mot de passe de votre compte
+        <strong>{{ username }}</strong> pour l'activer.
+      </p>
+
+      <div class="field">
+        <label for="password">Mot de passe</label>
+        <input
+          id="password"
+          type="password"
+          [(ngModel)]="password"
+          placeholder="8 caracteres minimum" />
+      </div>
+
+      <div class="field">
+        <label for="confirmPassword">Confirmer le mot de passe</label>
+        <input
+          id="confirmPassword"
+          type="password"
+          [(ngModel)]="confirmPassword"
+          (keyup.enter)="submit()" />
+      </div>
+
+      <p class="error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+      <button type="button" (click)="submit()" [disabled]="submitting">
+        {{ submitting ? 'Activation...' : 'Activer mon compte' }}
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
