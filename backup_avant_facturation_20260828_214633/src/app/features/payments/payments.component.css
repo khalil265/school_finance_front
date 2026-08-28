@@ -1,0 +1,320 @@
+.payments-page {
+  padding: 24px;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.subtitle {
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.year-select {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.year-select select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
+.error-banner {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.success-banner {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.search-card,
+.student-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.search-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.search-row input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
+button {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #1e293b;
+  color: #fff;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+button.small {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.search-results {
+  list-style: none;
+  margin-top: 12px;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.search-results li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.search-results li:hover {
+  background: #f9fafb;
+}
+
+.student-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.monthly-panel {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.monthly-summary {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.monthly-box {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px 16px;
+}
+
+.monthly-box .label {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.monthly-box .value {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.monthly-box .value.paid {
+  color: #16a34a;
+}
+
+.monthly-box .value.remaining {
+  color: #dc2626;
+}
+
+.monthly-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.month-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #e5e7eb;
+  min-width: 60px;
+}
+
+.month-chip .month-number {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.month-chip .month-status {
+  font-size: 10px;
+  color: #374151;
+}
+
+.month-chip[data-status="PAID"] {
+  background: #dcfce7;
+}
+
+.month-chip[data-status="PAID"] .month-status {
+  color: #15803d;
+}
+
+.month-chip[data-status="PARTIALLY_PAID"] {
+  background: #fef3c7;
+}
+
+.month-chip[data-status="PARTIALLY_PAID"] .month-status {
+  color: #92400e;
+}
+
+.month-chip[data-status="OVERDUE"] {
+  background: #fee2e2;
+}
+
+.month-chip[data-status="OVERDUE"] .month-status {
+  color: #b91c1c;
+}
+
+.month-chip[data-status="PENDING"] {
+  background: #e5e7eb;
+}
+
+.payment-form {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 20px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.form-row input,
+.form-row select,
+.form-row textarea {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-family: inherit;
+}
+
+.form-error {
+  color: #dc2626;
+  margin-bottom: 8px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.receipt-card {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 20px;
+}
+
+.receipt-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.receipt-grid .label {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.receipt-grid .value {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.allocations-table,
+.payments-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.allocations-table th,
+.allocations-table td,
+.payments-table th,
+.payments-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.status-badge[data-status="COMPLETED"] {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.status-badge[data-status="PENDING"] {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge[data-status="CANCELLED"] {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.empty-payments,
+.empty-state {
+  text-align: center;
+  color: #6b7280;
+  padding: 32px 0;
+}

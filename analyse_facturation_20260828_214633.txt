@@ -1,0 +1,3746 @@
+﻿
+============================================================
+SCHOOL FINANCE - CODE FACTURATION / PAIEMENTS
+DATE : 20260828_214633
+============================================================
+
+
+############################################################
+# FICHIER : src\app\features\billing\billing.component.ts
+############################################################
+
+import {
+  Component,
+  OnInit,
+  inject
+} from '@angular/core';
+
+import {
+  CommonModule
+} from '@angular/common';
+
+import {
+  FormBuilder,
+  ReactiveFormsModule,
+  Validators
+} from '@angular/forms';
+
+import {
+  FormsModule
+} from '@angular/forms';
+
+import {
+  HttpErrorResponse
+} from '@angular/common/http';
+
+import {
+  finalize
+} from 'rxjs';
+
+import {
+  BillingService
+} from '../../core/services/billing.service';
+
+import {
+  PaymentService
+} from '../../core/services/payment.service';
+
+import {
+  StudentService
+} from '../../core/services/student.service';
+
+import {
+  AcademicYearService
+} from '../../core/services/academic-year.service';
+
+import {
+  AppContextService
+} from '../../core/services/app-context.service';
+
+import {
+  Enrollment,
+  Student
+} from '../../shared/models/student.model';
+
+import {
+  AcademicYear
+} from '../../shared/models/academic-year.model';
+
+import {
+  StudentFinancialSummary
+} from '../../shared/models/billing.model';
+
+import {
+  Receipt
+} from '../../shared/models/payment.model';
+
+
+@Component({
+  selector: 'app-billing',
+  standalone: true,
+
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule
+  ],
+
+  templateUrl: './billing.component.html',
+  styleUrl: './billing.component.css'
+})
+export class BillingComponent implements OnInit {
+
+  private readonly billingService =
+    inject(BillingService);
+
+  private readonly paymentService =
+    inject(PaymentService);
+
+  private readonly studentService =
+    inject(StudentService);
+
+  private readonly academicYearService =
+    inject(AcademicYearService);
+
+  private readonly appContext =
+    inject(AppContextService);
+
+  private readonly fb =
+    inject(FormBuilder);
+
+
+  academicYears: AcademicYear[] = [];
+
+  selectedAcademicYearId = '';
+
+
+  searchQuery = '';
+
+  searchResults: Student[] = [];
+
+  selectedStudent: Student | null = null;
+
+
+  summary: StudentFinancialSummary | null = null;
+
+
+  enrollments: Enrollment[] = [];
+
+  currentEnrollment: Enrollment | null = null;
+
+  loadingEnrollments = false;
+
+
+  paymentFormVisible = false;
+
+  lastReceipt: Receipt | null = null;
+
+  downloadingReceiptId: string | null = null;
+
+
+  loadingYears = false;
+
+  searching = false;
+
+  loadingSummary = false;
+
+  refreshing = false;
+
+  generating = false;
+
+  savingPayment = false;
+
+
+  errorMessage = '';
+
+  generateError = '';
+
+  generateSuccess = '';
+
+  paymentError = '';
+
+  paymentSuccess = '';
+
+
+  readonly paymentForm =
+    this.fb.nonNullable.group({
+
+      amount: [
+        0,
+        [
+          Validators.required,
+          Validators.min(1)
+        ]
+      ],
+
+      paymentMethod: [
+        'CASH',
+        [
+          Validators.required
+        ]
+      ],
+
+      transactionReference: [''],
+
+      notes: ['']
+
+    });
+
+
+  ngOnInit(): void {
+
+    this.loadAcademicYears();
+  }
+
+
+  loadAcademicYears(): void {
+
+    this.loadingYears = true;
+
+
+    this.academicYearService
+      .findAll(
+        this.appContext.establishmentId()
+      )
+      .pipe(
+        finalize(() => {
+          this.loadingYears = false;
+        })
+      )
+      .subscribe({
+
+        next: years => {
+
+          this.academicYears = years;
+
+          const current =
+            years.find(y => y.currentYear);
+
+          this.selectedAcademicYearId =
+            current
+              ? current.id
+              : (years[0]?.id ?? '');
+        },
+
+        error: error => {
+
+          console.error(
+            'Erreur chargement annees academiques',
+            error
+          );
+
+          this.errorMessage =
+            'Impossible de charger les annees academiques.';
+        }
+
+      });
+  }
+
+
+  searchStudents(): void {
+
+    if (!this.searchQuery.trim()) {
+
+      this.searchResults = [];
+
+      return;
+    }
+
+
+    this.searching = true;
+
+    this.errorMessage = '';
+
+
+    this.studentService
+      .search(
+        this.searchQuery.trim(),
+        0,
+        10
+      )
+      .pipe(
+        finalize(() => {
+          this.searching = false;
+        })
+      )
+      .subscribe({
+
+        next: page => {
+
+          this.searchResults =
+            page.content ?? [];
+        },
+
+        error: error => {
+
+          console.error(
+            'Erreur recherche eleve',
+            error
+          );
+
+          this.errorMessage =
+            'Impossible de rechercher les eleves.';
+        }
+
+      });
+  }
+
+
+  selectStudent(
+    student: Student
+  ): void {
+
+    this.selectedStudent = student;
+
+    this.searchResults = [];
+
+    this.searchQuery = '';
+
+    this.summary = null;
+
+    this.enrollments = [];
+
+    this.currentEnrollment = null;
+
+    this.generateError = '';
+
+    this.generateSuccess = '';
+
+    this.paymentError = '';
+
+    this.paymentSuccess = '';
+
+    this.lastReceipt = null;
+
+    this.paymentFormVisible = false;
+
+    this.loadEnrollments();
+
+    this.loadSummary();
+  }
+
+
+  loadEnrollments(): void {
+
+    if (!this.selectedStudent) {
+      return;
+    }
+
+
+    this.loadingEnrollments = true;
+
+
+    this.studentService
+      .getEnrollments(
+        this.selectedStudent.id
+      )
+      .pipe(
+        finalize(() => {
+          this.loadingEnrollments = false;
+        })
+      )
+      .subscribe({
+
+        next: enrollments => {
+
+          this.enrollments = enrollments;
+
+          this.updateCurrentEnrollment();
+        },
+
+        error: error => {
+
+          console.error(
+            'Erreur chargement inscriptions',
+            error
+          );
+
+          this.enrollments = [];
+
+          this.currentEnrollment = null;
+        }
+
+      });
+  }
+
+
+  private updateCurrentEnrollment(): void {
+
+    if (!this.selectedAcademicYearId) {
+
+      this.currentEnrollment = null;
+
+      return;
+    }
+
+
+    this.currentEnrollment =
+      this.enrollments.find(
+        e =>
+          e.academicYearId === this.selectedAcademicYearId &&
+          e.status === 'ACTIVE'
+      )
+      ?? null;
+  }
+
+
+  loadSummary(): void {
+
+    if (
+      !this.selectedStudent ||
+      !this.selectedAcademicYearId
+    ) {
+      return;
+    }
+
+
+    this.loadingSummary = true;
+
+    this.errorMessage = '';
+
+
+    this.billingService
+      .getSummary(
+        this.selectedStudent.id,
+        this.selectedAcademicYearId
+      )
+      .pipe(
+        finalize(() => {
+          this.loadingSummary = false;
+        })
+      )
+      .subscribe({
+
+        next: summary => {
+
+          this.summary = summary;
+        },
+
+        error: (error: HttpErrorResponse) => {
+
+          this.summary = null;
+
+
+          if (error.status === 404) {
+
+            this.errorMessage =
+              'Aucun compte financier pour cet eleve sur cette annee. Generez son echeancier ci-dessous.';
+
+            return;
+          }
+
+
+          console.error(
+            'Erreur chargement resume financier',
+            error
+          );
+
+          this.errorMessage =
+            'Impossible de charger le resume financier.';
+        }
+
+      });
+  }
+
+
+  onAcademicYearChange(): void {
+
+    this.summary = null;
+
+    this.updateCurrentEnrollment();
+
+
+    if (this.selectedStudent) {
+
+      this.loadSummary();
+    }
+  }
+
+
+  refreshSummary(): void {
+
+    if (
+      !this.selectedStudent ||
+      !this.selectedAcademicYearId
+    ) {
+      return;
+    }
+
+
+    this.refreshing = true;
+
+    this.errorMessage = '';
+
+
+    this.billingService
+      .refreshSummary(
+        this.selectedStudent.id,
+        this.selectedAcademicYearId
+      )
+      .pipe(
+        finalize(() => {
+          this.refreshing = false;
+        })
+      )
+      .subscribe({
+
+        next: summary => {
+
+          this.summary = summary;
+        },
+
+        error: error => {
+
+          console.error(
+            'Erreur rafraichissement resume',
+            error
+          );
+
+          this.errorMessage =
+            'Impossible de rafraichir le resume financier.';
+        }
+
+      });
+  }
+
+
+  generateSchedule(): void {
+
+    if (!this.currentEnrollment) {
+
+      this.generateError =
+        "Aucune inscription active trouvee pour cette annee academique.";
+
+      return;
+    }
+
+
+    this.generating = true;
+
+    this.generateError = '';
+
+    this.generateSuccess = '';
+
+
+    this.billingService
+      .generateSchedule({
+        enrollmentId:
+          this.currentEnrollment.id
+      })
+      .pipe(
+        finalize(() => {
+          this.generating = false;
+        })
+      )
+      .subscribe({
+
+        next: response => {
+
+          this.generateSuccess =
+            `Echeancier genere : ${response.createdCharges} charge(s) creee(s), ${response.skippedCharges} ignoree(s).`;
+
+          this.loadSummary();
+        },
+
+        error: (error: HttpErrorResponse) => {
+
+          console.error(
+            'Erreur generation echeancier',
+            error
+          );
+
+          this.generateError =
+            error.error?.message
+            ?? "Impossible de generer l'echeancier.";
+        }
+
+      });
+  }
+
+
+  openPaymentForm(): void {
+
+    this.paymentError = '';
+
+    this.paymentSuccess = '';
+
+    this.lastReceipt = null;
+
+    this.paymentForm.reset({
+
+      amount: 0,
+
+      paymentMethod: 'CASH',
+
+      transactionReference: '',
+
+      notes: ''
+
+    });
+
+    this.paymentFormVisible = true;
+  }
+
+
+  closePaymentForm(): void {
+
+    if (this.savingPayment) {
+      return;
+    }
+
+    this.paymentFormVisible = false;
+
+    this.paymentError = '';
+  }
+
+
+  submitPayment(): void {
+
+    if (
+      !this.selectedStudent ||
+      !this.selectedAcademicYearId
+    ) {
+      return;
+    }
+
+
+    this.paymentError = '';
+
+
+    if (this.paymentForm.invalid) {
+
+      this.paymentForm.markAllAsTouched();
+
+      return;
+    }
+
+
+    this.savingPayment = true;
+
+
+    const value =
+      this.paymentForm.getRawValue();
+
+
+    const request = {
+
+      studentId:
+        this.selectedStudent.id,
+
+      academicYearId:
+        this.selectedAcademicYearId,
+
+      amount:
+        value.amount,
+
+      paymentMethod:
+        value.paymentMethod,
+
+      transactionReference:
+        this.nullIfEmpty(
+          value.transactionReference
+        ),
+
+      notes:
+        this.nullIfEmpty(
+          value.notes
+        )
+
+    };
+
+
+    this.paymentService
+      .create(request)
+      .pipe(
+        finalize(() => {
+          this.savingPayment = false;
+        })
+      )
+      .subscribe({
+
+        next: payment => {
+
+          this.paymentSuccess =
+            `Paiement ${payment.paymentNumber} enregistre avec succes.`;
+
+          this.lastReceipt =
+            payment.receipt;
+
+          this.paymentFormVisible = false;
+
+          this.loadSummary();
+        },
+
+        error: (error: HttpErrorResponse) => {
+
+          console.error(
+            'Erreur enregistrement paiement',
+            error
+          );
+
+
+          if (error.status === 403) {
+
+            this.paymentError =
+              'Vous ne disposez pas des droits necessaires.';
+
+            return;
+          }
+
+
+          if (error.status === 400) {
+
+            this.paymentError =
+              error.error?.message
+              ?? 'Les informations saisies sont invalides.';
+
+            return;
+          }
+
+
+          this.paymentError =
+            "Impossible d'enregistrer le paiement.";
+        }
+
+      });
+  }
+
+
+  downloadReceipt(): void {
+
+    if (!this.lastReceipt || this.lastReceipt.cancelled) {
+      return;
+    }
+
+
+    this.downloadingReceiptId =
+      this.lastReceipt.id;
+
+
+    this.paymentService
+      .downloadReceiptPdf(
+        this.lastReceipt.id
+      )
+      .pipe(
+        finalize(() => {
+          this.downloadingReceiptId = null;
+        })
+      )
+      .subscribe({
+
+        next: blob => {
+
+          const url =
+            window.URL.createObjectURL(blob);
+
+          const link =
+            document.createElement('a');
+
+          link.href = url;
+
+          link.download =
+            `recu-${this.lastReceipt!.receiptNumber}.pdf`;
+
+          link.click();
+
+          window.URL.revokeObjectURL(url);
+        },
+
+        error: error => {
+
+          console.error(
+            'Erreur telechargement recu',
+            error
+          );
+
+          this.errorMessage =
+            'Impossible de telecharger le recu.';
+        }
+
+      });
+  }
+
+
+  private nullIfEmpty(
+    value: string | null | undefined
+  ): string | null {
+
+    if (
+      value == null ||
+      value.trim() === ''
+    ) {
+
+      return null;
+    }
+
+    return value.trim();
+  }
+
+
+  statusLabel(
+    status: string
+  ): string {
+
+    switch (status) {
+
+      case 'UP_TO_DATE':
+        return 'A jour';
+
+      case 'PARTIAL':
+        return 'Partiel';
+
+      case 'OVERDUE':
+        return 'En retard';
+
+      case 'SETTLED':
+        return 'Solde';
+
+      case 'SUSPENDED':
+        return 'Suspendu';
+
+      case 'PENDING':
+        return 'En attente';
+
+      case 'PARTIALLY_PAID':
+        return 'Paiement partiel';
+
+      case 'PAID':
+        return 'Paye';
+
+      case 'CANCELLED':
+        return 'Annule';
+
+      default:
+        return status || '-';
+    }
+  }
+}
+
+############################################################
+# FICHIER : src\app\features\billing\billing.component.html
+############################################################
+
+<div class="billing-page">
+
+  <div class="header-row">
+
+    <div>
+      <h1>Facturation</h1>
+      <p class="subtitle">Gestion des frais, echeances et factures scolaires</p>
+    </div>
+
+    <div class="year-select">
+      <label for="academicYear">Annee academique</label>
+      <select
+        id="academicYear"
+        [(ngModel)]="selectedAcademicYearId"
+        (ngModelChange)="onAcademicYearChange()"
+        [disabled]="loadingYears">
+        <option
+          *ngFor="let year of academicYears"
+          [value]="year.id">
+          {{ year.label }}
+        </option>
+      </select>
+    </div>
+
+  </div>
+
+  <div class="error-banner" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="search-card">
+
+    <label for="studentSearch">Rechercher un eleve</label>
+
+    <div class="search-row">
+      <input
+        id="studentSearch"
+        type="text"
+        placeholder="Nom, prenom ou matricule..."
+        [(ngModel)]="searchQuery"
+        (keyup.enter)="searchStudents()" />
+
+      <button
+        type="button"
+        (click)="searchStudents()"
+        [disabled]="searching">
+        {{ searching ? 'Recherche...' : 'Rechercher' }}
+      </button>
+    </div>
+
+    <ul class="search-results" *ngIf="searchResults.length > 0">
+      <li
+        *ngFor="let student of searchResults"
+        (click)="selectStudent(student)">
+        <strong>{{ student.lastName }} {{ student.firstName }}</strong>
+        <span>{{ student.registrationNumber }}</span>
+      </li>
+    </ul>
+
+  </div>
+
+  <div class="student-card" *ngIf="selectedStudent">
+
+    <div class="student-header">
+      <div>
+        <h2>{{ selectedStudent.lastName }} {{ selectedStudent.firstName }}</h2>
+        <p>{{ selectedStudent.registrationNumber }}</p>
+
+        <p class="enrollment-info" *ngIf="currentEnrollment">
+          Inscrit en {{ currentEnrollment.schoolClass }} ({{ currentEnrollment.level }})
+        </p>
+
+        <p class="enrollment-warning" *ngIf="!loadingEnrollments && !currentEnrollment">
+          Aucune inscription active pour cette annee academique.
+        </p>
+      </div>
+
+      <div class="header-actions">
+
+        <button
+          type="button"
+          (click)="openPaymentForm()"
+          [disabled]="!summary"
+          *ngIf="!paymentFormVisible">
+          Nouveau paiement
+        </button>
+
+        <button
+          type="button"
+          class="secondary"
+          (click)="refreshSummary()"
+          [disabled]="refreshing || !summary">
+          {{ refreshing ? 'Actualisation...' : 'Actualiser' }}
+        </button>
+
+      </div>
+    </div>
+
+    <div class="payment-form-card" *ngIf="paymentFormVisible">
+
+      <h3>Enregistrer un paiement</h3>
+
+      <form [formGroup]="paymentForm" (ngSubmit)="submitPayment()">
+
+        <div class="form-grid">
+
+          <div class="form-row">
+            <label for="amount">Montant (XOF)</label>
+            <input id="amount" type="number" formControlName="amount" min="1" />
+          </div>
+
+          <div class="form-row">
+            <label for="paymentMethod">Mode de paiement</label>
+            <select id="paymentMethod" formControlName="paymentMethod">
+              <option value="CASH">Especes</option>
+              <option value="CHECK">Cheque</option>
+              <option value="BANK_TRANSFER">Virement bancaire</option>
+              <option value="MOBILE_MONEY">Mobile Money</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label for="transactionReference">Reference (optionnel)</label>
+            <input id="transactionReference" type="text" formControlName="transactionReference" />
+          </div>
+
+        </div>
+
+        <div class="form-row">
+          <label for="notes">Notes (optionnel)</label>
+          <textarea id="notes" formControlName="notes" rows="2"></textarea>
+        </div>
+
+        <p class="form-error" *ngIf="paymentError">{{ paymentError }}</p>
+
+        <div class="form-actions">
+          <button type="button" class="secondary" (click)="closePaymentForm()" [disabled]="savingPayment">Annuler</button>
+          <button type="submit" [disabled]="savingPayment">
+            {{ savingPayment ? 'Enregistrement...' : 'Valider le paiement' }}
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+
+    <div class="payment-success-card" *ngIf="paymentSuccess">
+
+      <p>{{ paymentSuccess }}</p>
+
+      <button
+        type="button"
+        class="secondary"
+        *ngIf="lastReceipt"
+        (click)="downloadReceipt()"
+        [disabled]="downloadingReceiptId === lastReceipt.id">
+        {{ downloadingReceiptId === lastReceipt.id ? 'Telechargement...' : 'Telecharger le recu PDF' }}
+      </button>
+
+    </div>
+
+    <div class="loading" *ngIf="loadingSummary">
+      Chargement du resume financier...
+    </div>
+
+    <div class="summary-grid" *ngIf="summary && !loadingSummary">
+
+      <div class="summary-box">
+        <span class="label">Total facture</span>
+        <span class="value">{{ summary.totalCharged | number: '1.0-0' }} XOF</span>
+      </div>
+
+      <div class="summary-box">
+        <span class="label">Total paye</span>
+        <span class="value paid">{{ summary.totalPaid | number: '1.0-0' }} XOF</span>
+      </div>
+
+      <div class="summary-box">
+        <span class="label">Remise</span>
+        <span class="value">{{ summary.totalDiscount | number: '1.0-0' }} XOF</span>
+      </div>
+
+      <div class="summary-box">
+        <span class="label">Solde</span>
+        <span
+          class="value"
+          [class.balance-due]="summary.balance > 0">
+          {{ summary.balance | number: '1.0-0' }} XOF
+        </span>
+      </div>
+
+      <div class="summary-box">
+        <span class="label">Statut</span>
+        <span class="status-badge" [attr.data-status]="summary.status">
+          {{ statusLabel(summary.status) }}
+        </span>
+      </div>
+
+    </div>
+
+    <table class="charges-table" *ngIf="summary && summary.charges.length > 0">
+      <thead>
+        <tr>
+          <th>Frais</th>
+          <th>Echeance</th>
+          <th>Montant</th>
+          <th>Paye</th>
+          <th>Restant</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let charge of summary.charges">
+          <td>{{ charge.label }}</td>
+          <td>{{ charge.dueDate }}</td>
+          <td>{{ charge.amount | number: '1.0-0' }}</td>
+          <td>{{ charge.paidAmount | number: '1.0-0' }}</td>
+          <td>{{ charge.remainingAmount | number: '1.0-0' }}</td>
+          <td>
+            <span class="status-badge" [attr.data-status]="charge.status">
+              {{ statusLabel(charge.status) }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="generate-panel">
+
+      <h3>Generer un echeancier</h3>
+
+      <p class="generate-hint" *ngIf="currentEnrollment">
+        Sera genere pour l'inscription en {{ currentEnrollment.schoolClass }}.
+      </p>
+
+      <button
+        type="button"
+        (click)="generateSchedule()"
+        [disabled]="generating || !currentEnrollment">
+        {{ generating ? 'Generation...' : 'Generer l\'echeancier' }}
+      </button>
+
+      <p class="generate-error" *ngIf="generateError">{{ generateError }}</p>
+      <p class="generate-success" *ngIf="generateSuccess">{{ generateSuccess }}</p>
+
+    </div>
+
+  </div>
+
+  <div class="empty-state" *ngIf="!selectedStudent">
+    Recherchez un eleve ci-dessus pour consulter ou generer sa facturation.
+  </div>
+
+</div>
+
+############################################################
+# FICHIER : src\app\features\billing\billing.component.css
+############################################################
+
+.billing-page {
+  padding: 24px;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.subtitle {
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.year-select {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.year-select select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
+.error-banner {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.search-card,
+.student-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.search-row,
+.generate-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.search-row input,
+.generate-row input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
+button {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #1e293b;
+  color: #fff;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.search-results {
+  list-style: none;
+  margin-top: 12px;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.search-results li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.search-results li:hover {
+  background: #f9fafb;
+}
+
+.student-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.payment-form-card {
+  background: #eef2ff;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 20px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.form-row input,
+.form-row select,
+.form-row textarea {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-family: inherit;
+}
+
+.form-error {
+  color: #dc2626;
+  margin-bottom: 8px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.payment-success-card {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.payment-success-card p {
+  color: #15803d;
+  font-weight: 600;
+  margin: 0;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.summary-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  background: #f9fafb;
+  border-radius: 10px;
+}
+
+.summary-box .label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.summary-box .value {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.summary-box .value.paid {
+  color: #16a34a;
+}
+
+.summary-box .value.balance-due {
+  color: #dc2626;
+}
+
+.charges-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+}
+
+.charges-table th,
+.charges-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.status-badge[data-status="PAID"],
+.status-badge[data-status="UP_TO_DATE"],
+.status-badge[data-status="SETTLED"] {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.status-badge[data-status="OVERDUE"] {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.status-badge[data-status="PARTIAL"],
+.status-badge[data-status="PARTIALLY_PAID"],
+.status-badge[data-status="PENDING"] {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.generate-panel {
+  border-top: 1px solid #f3f4f6;
+  padding-top: 16px;
+}
+
+.generate-error {
+  color: #dc2626;
+  margin-top: 8px;
+}
+
+.generate-success {
+  color: #16a34a;
+  margin-top: 8px;
+}
+
+.empty-state {
+  text-align: center;
+  color: #6b7280;
+  padding: 48px 0;
+}
+
+############################################################
+# FICHIER : src\app\features\payments\payments.component.ts
+############################################################
+
+import {
+  Component,
+  OnInit,
+  inject
+} from '@angular/core';
+
+import {
+  CommonModule
+} from '@angular/common';
+
+import {
+  FormBuilder,
+  ReactiveFormsModule,
+  Validators
+} from '@angular/forms';
+
+import {
+  FormsModule
+} from '@angular/forms';
+
+import {
+  HttpErrorResponse
+} from '@angular/common/http';
+
+import {
+  finalize
+} from 'rxjs';
+
+import {
+  PaymentService
+} from '../../core/services/payment.service';
+
+import {
+  StudentService
+} from '../../core/services/student.service';
+
+import {
+  AcademicYearService
+} from '../../core/services/academic-year.service';
+
+import {
+  BillingService
+} from '../../core/services/billing.service';
+
+import {
+  AppContextService
+} from '../../core/services/app-context.service';
+
+import {
+  Student
+} from '../../shared/models/student.model';
+
+import {
+  AcademicYear
+} from '../../shared/models/academic-year.model';
+
+import {
+  Payment,
+  Receipt
+} from '../../shared/models/payment.model';
+
+import {
+  StudentCharge,
+  StudentFinancialSummary
+} from '../../shared/models/billing.model';
+
+
+@Component({
+  selector: 'app-payments',
+  standalone: true,
+
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule
+  ],
+
+  templateUrl: './payments.component.html',
+  styleUrl: './payments.component.css'
+})
+export class PaymentsComponent implements OnInit {
+
+  private readonly paymentService =
+    inject(PaymentService);
+
+  private readonly studentService =
+    inject(StudentService);
+
+  private readonly academicYearService =
+    inject(AcademicYearService);
+
+  private readonly billingService =
+    inject(BillingService);
+
+  private readonly appContext =
+    inject(AppContextService);
+
+  private readonly fb =
+    inject(FormBuilder);
+
+
+  academicYears: AcademicYear[] = [];
+
+  selectedAcademicYearId = '';
+
+
+  searchQuery = '';
+
+  searchResults: Student[] = [];
+
+  selectedStudent: Student | null = null;
+
+
+  payments: Payment[] = [];
+
+  lastPayment: Payment | null = null;
+
+
+  monthlySummary: StudentFinancialSummary | null = null;
+
+  monthlyCharges: StudentCharge[] = [];
+
+
+  formVisible = false;
+
+
+  loadingYears = false;
+
+  searching = false;
+
+  loadingPayments = false;
+
+  loadingMonthly = false;
+
+  saving = false;
+
+  downloadingReceiptId: string | null = null;
+
+
+  errorMessage = '';
+
+  formError = '';
+
+  successMessage = '';
+
+
+  readonly paymentForm =
+    this.fb.nonNullable.group({
+
+      amount: [
+        0,
+        [
+          Validators.required,
+          Validators.min(1)
+        ]
+      ],
+
+      paymentMethod: [
+        'CASH',
+        [
+          Validators.required
+        ]
+      ],
+
+      transactionReference: [''],
+
+      notes: ['']
+
+    });
+
+
+  ngOnInit(): void {
+
+    this.loadAcademicYears();
+  }
+
+
+  loadAcademicYears(): void {
+
+    this.loadingYears = true;
+
+
+    this.academicYearService
+      .findAll(
+        this.appContext.establishmentId()
+      )
+      .pipe(
+        finalize(() => {
+          this.loadingYears = false;
+        })
+      )
+      .subscribe({
+
+        next: years => {
+
+          this.academicYears = years;
+
+          const current =
+            years.find(y => y.currentYear);
+
+          this.selectedAcademicYearId =
+            current
+              ? current.id
+              : (years[0]?.id ?? '');
+        },
+
+        error: error => {
+
+          console.error(
+            'Erreur chargement annees academiques',
+            error
+          );
+
+          this.errorMessage =
+            'Impossible de charger les annees academiques.';
+        }
+
+      });
+  }
+
+
+  searchStudents(): void {
+
+    if (!this.searchQuery.trim()) {
+
+      this.searchResults = [];
+
+      return;
+    }
+
+
+    this.searching = true;
+
+    this.errorMessage = '';
+
+
+    this.studentService
+      .search(
+        this.searchQuery.trim(),
+        0,
+        10
+      )
+      .pipe(
+        finalize(() => {
+          this.searching = false;
+        })
+      )
+      .subscribe({
+
+        next: page => {
+
+          this.searchResults =
+            page.content ?? [];
+        },
+
+        error: error => {
+
+          console.error(
+            'Erreur recherche eleve',
+            error
+          );
+
+          this.errorMessage =
+            'Impossible de rechercher les eleves.';
+        }
+
+      });
+  }
+
+
+  selectStudent(
+    student: Student
+  ): void {
+
+    this.selectedStudent = student;
+
+    this.searchResults = [];
+
+    this.searchQuery = '';
+
+    this.payments = [];
+
+    this.lastPayment = null;
+
+    this.monthlySummary = null;
+
+    this.monthlyCharges = [];
+
+    this.formVisible = false;
+
+    this.successMessage = '';
+
+    this.loadPayments();
+
+    this.loadMonthlySummary();
+  }
+
+
+  loadPayments(): void {
+
+    if (
+      !this.selectedStudent ||
+      !this.selectedAcademicYearId
+    ) {
+      return;
+    }
+
+
+    this.loadingPayments = true;
+
+    this.errorMessage = '';
+
+
+    this.paymentService
+      .getStudentPayments(
+        this.selectedStudent.id,
+        this.selectedAcademicYearId
+      )
+      .pipe(
+        finalize(() => {
+          this.loadingPayments = false;
+        })
+      )
+      .subscribe({
+
+        next: payments => {
+
+          this.payments = payments;
+        },
+
+        error: error => {
+
+          console.error(
+            'Erreur chargement paiements',
+            error
+          );
+
+          this.errorMessage =
+            'Impossible de charger les paiements.';
+        }
+
+      });
+  }
+
+
+  loadMonthlySummary(): void {
+
+    if (
+      !this.selectedStudent ||
+      !this.selectedAcademicYearId
+    ) {
+      return;
+    }
+
+
+    this.loadingMonthly = true;
+
+
+    this.billingService
+      .getSummary(
+        this.selectedStudent.id,
+        this.selectedAcademicYearId
+      )
+      .pipe(
+        finalize(() => {
+          this.loadingMonthly = false;
+        })
+      )
+      .subscribe({
+
+        next: summary => {
+
+          this.monthlySummary = summary;
+
+          this.monthlyCharges =
+            summary.charges
+              .filter(c => c.installmentNumber != null)
+              .sort(
+                (a, b) =>
+                  (a.installmentNumber ?? 0) - (b.installmentNumber ?? 0)
+              );
+        },
+
+        error: () => {
+
+          this.monthlySummary = null;
+
+          this.monthlyCharges = [];
+        }
+
+      });
+  }
+
+
+  get monthsTotal(): number {
+
+    return this.monthlyCharges.length;
+  }
+
+
+  get monthsPaid(): number {
+
+    return this.monthlyCharges.filter(
+      c => c.status === 'PAID'
+    ).length;
+  }
+
+
+  get monthsRemaining(): number {
+
+    return this.monthsTotal - this.monthsPaid;
+  }
+
+
+  onAcademicYearChange(): void {
+
+    this.lastPayment = null;
+
+    if (this.selectedStudent) {
+
+      this.loadPayments();
+
+      this.loadMonthlySummary();
+    }
+  }
+
+
+  openPaymentForm(): void {
+
+    this.formError = '';
+
+    this.successMessage = '';
+
+    this.lastPayment = null;
+
+    this.paymentForm.reset({
+
+      amount: 0,
+
+      paymentMethod: 'CASH',
+
+      transactionReference: '',
+
+      notes: ''
+
+    });
+
+    this.formVisible = true;
+  }
+
+
+  closeForm(): void {
+
+    if (this.saving) {
+      return;
+    }
+
+    this.formVisible = false;
+
+    this.formError = '';
+  }
+
+
+  submitPayment(): void {
+
+    this.formError = '';
+
+
+    if (
+      !this.selectedStudent ||
+      !this.selectedAcademicYearId
+    ) {
+
+      this.formError =
+        "Selectionnez un eleve et une annee academique.";
+
+      return;
+    }
+
+
+    if (this.paymentForm.invalid) {
+
+      this.paymentForm.markAllAsTouched();
+
+      return;
+    }
+
+
+    this.saving = true;
+
+
+    const value =
+      this.paymentForm.getRawValue();
+
+
+    const request = {
+
+      studentId:
+        this.selectedStudent.id,
+
+      academicYearId:
+        this.selectedAcademicYearId,
+
+      amount:
+        value.amount,
+
+      paymentMethod:
+        value.paymentMethod,
+
+      transactionReference:
+        this.nullIfEmpty(
+          value.transactionReference
+        ),
+
+      notes:
+        this.nullIfEmpty(
+          value.notes
+        )
+
+    };
+
+
+    this.paymentService
+      .create(request)
+      .pipe(
+        finalize(() => {
+          this.saving = false;
+        })
+      )
+      .subscribe({
+
+        next: payment => {
+
+          this.lastPayment = payment;
+
+          this.successMessage =
+            `Paiement ${payment.paymentNumber} enregistre avec succes.`;
+
+          this.formVisible = false;
+
+          this.loadPayments();
+
+          this.loadMonthlySummary();
+        },
+
+        error: (error: HttpErrorResponse) => {
+
+          this.handleSaveError(error);
+        }
+
+      });
+  }
+
+
+  downloadReceipt(
+    receipt: Receipt | null
+  ): void {
+
+    if (!receipt || receipt.cancelled) {
+      return;
+    }
+
+
+    this.downloadingReceiptId = receipt.id;
+
+
+    this.paymentService
+      .downloadReceiptPdf(
+        receipt.id
+      )
+      .pipe(
+        finalize(() => {
+          this.downloadingReceiptId = null;
+        })
+      )
+      .subscribe({
+
+        next: blob => {
+
+          const url =
+            window.URL.createObjectURL(blob);
+
+          const link =
+            document.createElement('a');
+
+          link.href = url;
+
+          link.download =
+            `recu-${receipt.receiptNumber}.pdf`;
+
+          link.click();
+
+          window.URL.revokeObjectURL(url);
+        },
+
+        error: error => {
+
+          console.error(
+            'Erreur telechargement recu',
+            error
+          );
+
+          this.errorMessage =
+            'Impossible de telecharger le recu.';
+        }
+
+      });
+  }
+
+
+  private handleSaveError(
+    error: HttpErrorResponse
+  ): void {
+
+    console.error(
+      'Erreur enregistrement paiement',
+      error
+    );
+
+
+    if (error.status === 403) {
+
+      this.formError =
+        'Vous ne disposez pas des droits necessaires.';
+
+      return;
+    }
+
+
+    if (error.status === 400) {
+
+      this.formError =
+        error.error?.message
+        ?? 'Les informations saisies sont invalides.';
+
+      return;
+    }
+
+
+    if (error.status === 404) {
+
+      this.formError =
+        error.error?.message
+        ?? "Aucun compte financier pour cet eleve. Generez d'abord son echeancier dans le module Facturation.";
+
+      return;
+    }
+
+
+    this.formError =
+      error.error?.message
+      ?? "Impossible d'enregistrer le paiement.";
+  }
+
+
+  private nullIfEmpty(
+    value: string | null | undefined
+  ): string | null {
+
+    if (
+      value == null ||
+      value.trim() === ''
+    ) {
+
+      return null;
+    }
+
+    return value.trim();
+  }
+
+
+  methodLabel(
+    method: string
+  ): string {
+
+    switch (method) {
+
+      case 'CASH':
+        return 'Especes';
+
+      case 'CHECK':
+        return 'Cheque';
+
+      case 'BANK_TRANSFER':
+        return 'Virement bancaire';
+
+      case 'MOBILE_MONEY':
+        return 'Mobile Money';
+
+      default:
+        return method || '-';
+    }
+  }
+
+
+  statusLabel(
+    status: string
+  ): string {
+
+    switch (status) {
+
+      case 'PENDING':
+        return 'En attente';
+
+      case 'COMPLETED':
+        return 'Complete';
+
+      case 'CANCELLED':
+        return 'Annule';
+
+      case 'PAID':
+        return 'Paye';
+
+      case 'PARTIALLY_PAID':
+        return 'Partiel';
+
+      case 'OVERDUE':
+        return 'En retard';
+
+      default:
+        return status || '-';
+    }
+  }
+}
+
+############################################################
+# FICHIER : src\app\features\payments\payments.component.html
+############################################################
+
+<div class="payments-page">
+
+  <div class="header-row">
+
+    <div>
+      <h1>Paiements</h1>
+      <p class="subtitle">Enregistrement et historique des paiements eleves</p>
+    </div>
+
+    <div class="year-select">
+      <label for="academicYear">Annee academique</label>
+      <select
+        id="academicYear"
+        [(ngModel)]="selectedAcademicYearId"
+        (ngModelChange)="onAcademicYearChange()"
+        [disabled]="loadingYears">
+        <option
+          *ngFor="let year of academicYears"
+          [value]="year.id">
+          {{ year.label }}
+        </option>
+      </select>
+    </div>
+
+  </div>
+
+  <div class="error-banner" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="success-banner" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <div class="search-card">
+
+    <label for="studentSearch">Rechercher un eleve</label>
+
+    <div class="search-row">
+      <input
+        id="studentSearch"
+        type="text"
+        placeholder="Nom, prenom ou matricule..."
+        [(ngModel)]="searchQuery"
+        (keyup.enter)="searchStudents()" />
+
+      <button
+        type="button"
+        (click)="searchStudents()"
+        [disabled]="searching">
+        {{ searching ? 'Recherche...' : 'Rechercher' }}
+      </button>
+    </div>
+
+    <ul class="search-results" *ngIf="searchResults.length > 0">
+      <li
+        *ngFor="let student of searchResults"
+        (click)="selectStudent(student)">
+        <strong>{{ student.lastName }} {{ student.firstName }}</strong>
+        <span>{{ student.registrationNumber }}</span>
+      </li>
+    </ul>
+
+  </div>
+
+  <div class="student-card" *ngIf="selectedStudent">
+
+    <div class="student-header">
+      <div>
+        <h2>{{ selectedStudent.lastName }} {{ selectedStudent.firstName }}</h2>
+        <p>{{ selectedStudent.registrationNumber }}</p>
+      </div>
+
+      <button
+        type="button"
+        (click)="openPaymentForm()">
+        Nouveau paiement
+      </button>
+    </div>
+
+    <div class="monthly-panel" *ngIf="!loadingMonthly && monthsTotal > 0">
+
+      <h3>Suivi des mensualites</h3>
+
+      <div class="monthly-summary">
+        <div class="monthly-box">
+          <span class="label">Mois payes</span>
+          <span class="value paid">{{ monthsPaid }} / {{ monthsTotal }}</span>
+        </div>
+        <div class="monthly-box">
+          <span class="label">Mois restants</span>
+          <span class="value remaining">{{ monthsRemaining }}</span>
+        </div>
+      </div>
+
+      <div class="monthly-grid">
+        <div
+          class="month-chip"
+          *ngFor="let charge of monthlyCharges"
+          [attr.data-status]="charge.status">
+          <span class="month-number">{{ charge.installmentNumber }}</span>
+          <span class="month-status">{{ statusLabel(charge.status) }}</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="payment-form" *ngIf="formVisible">
+
+      <h3>Enregistrer un paiement</h3>
+
+      <form [formGroup]="paymentForm" (ngSubmit)="submitPayment()">
+
+        <div class="form-row">
+          <label for="amount">Montant (XOF)</label>
+          <input
+            id="amount"
+            type="number"
+            formControlName="amount"
+            min="1" />
+        </div>
+
+        <div class="form-row">
+          <label for="paymentMethod">Mode de paiement</label>
+          <select id="paymentMethod" formControlName="paymentMethod">
+            <option value="CASH">Especes</option>
+            <option value="CHECK">Cheque</option>
+            <option value="BANK_TRANSFER">Virement bancaire</option>
+            <option value="MOBILE_MONEY">Mobile Money</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label for="transactionReference">Reference (optionnel)</label>
+          <input
+            id="transactionReference"
+            type="text"
+            formControlName="transactionReference" />
+        </div>
+
+        <div class="form-row">
+          <label for="notes">Notes (optionnel)</label>
+          <textarea
+            id="notes"
+            formControlName="notes"
+            rows="2"></textarea>
+        </div>
+
+        <p class="form-error" *ngIf="formError">{{ formError }}</p>
+
+        <div class="form-actions">
+          <button
+            type="button"
+            class="secondary"
+            (click)="closeForm()"
+            [disabled]="saving">
+            Annuler
+          </button>
+
+          <button
+            type="submit"
+            [disabled]="saving">
+            {{ saving ? 'Enregistrement...' : 'Valider le paiement' }}
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+
+    <div class="receipt-card" *ngIf="lastPayment">
+
+      <h3>Recu de paiement</h3>
+
+      <div class="receipt-grid">
+        <div>
+          <span class="label">NÂ° paiement</span>
+          <span class="value">{{ lastPayment.paymentNumber }}</span>
+        </div>
+
+        <div>
+          <span class="label">Montant</span>
+          <span class="value">{{ lastPayment.amount | number: '1.0-0' }} XOF</span>
+        </div>
+
+        <div>
+          <span class="label">Solde compte</span>
+          <span class="value">{{ lastPayment.accountBalance | number: '1.0-0' }} XOF</span>
+        </div>
+
+        <div *ngIf="lastPayment.receipt">
+          <span class="label">NÂ° recu</span>
+          <span class="value">{{ lastPayment.receipt.receiptNumber }}</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="secondary"
+        *ngIf="lastPayment.receipt"
+        (click)="downloadReceipt(lastPayment.receipt)"
+        [disabled]="downloadingReceiptId === lastPayment.receipt.id">
+        {{ downloadingReceiptId === lastPayment.receipt.id ? 'Telechargement...' : 'Telecharger le recu PDF' }}
+      </button>
+
+      <table class="allocations-table" *ngIf="lastPayment.allocations.length > 0">
+        <thead>
+          <tr>
+            <th>Frais</th>
+            <th>Echeance</th>
+            <th>Montant alloue</th>
+            <th>Restant</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let alloc of lastPayment.allocations">
+            <td>{{ alloc.chargeLabel }}</td>
+            <td>{{ alloc.dueDate }}</td>
+            <td>{{ alloc.allocatedAmount | number: '1.0-0' }}</td>
+            <td>{{ alloc.remainingAmount | number: '1.0-0' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+
+    <div class="loading" *ngIf="loadingPayments">
+      Chargement des paiements...
+    </div>
+
+    <table class="payments-table" *ngIf="!loadingPayments && payments.length > 0">
+      <thead>
+        <tr>
+          <th>NÂ° paiement</th>
+          <th>Date</th>
+          <th>Montant</th>
+          <th>Mode</th>
+          <th>Statut</th>
+          <th>Reference</th>
+          <th>Recu</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let payment of payments">
+          <td>{{ payment.paymentNumber }}</td>
+          <td>{{ payment.paidAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td>{{ payment.amount | number: '1.0-0' }} XOF</td>
+          <td>{{ methodLabel(payment.paymentMethod) }}</td>
+          <td>
+            <span class="status-badge" [attr.data-status]="payment.status">
+              {{ statusLabel(payment.status) }}
+            </span>
+          </td>
+          <td>{{ payment.transactionReference ?? '-' }}</td>
+          <td>
+            <button
+              type="button"
+              class="small secondary"
+              *ngIf="payment.receipt && !payment.receipt.cancelled"
+              (click)="downloadReceipt(payment.receipt)"
+              [disabled]="downloadingReceiptId === payment.receipt.id">
+              {{ downloadingReceiptId === payment.receipt.id ? '...' : 'PDF' }}
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty-payments" *ngIf="!loadingPayments && payments.length === 0">
+      Aucun paiement enregistre pour cette annee academique.
+    </div>
+
+  </div>
+
+  <div class="empty-state" *ngIf="!selectedStudent">
+    Recherchez un eleve ci-dessus pour consulter ou enregistrer un paiement.
+  </div>
+
+</div>
+
+############################################################
+# FICHIER : src\app\features\payments\payments.component.css
+############################################################
+
+.payments-page {
+  padding: 24px;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.subtitle {
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.year-select {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.year-select select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
+.error-banner {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.success-banner {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.search-card,
+.student-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.search-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.search-row input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
+button {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #1e293b;
+  color: #fff;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+button.small {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.search-results {
+  list-style: none;
+  margin-top: 12px;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.search-results li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.search-results li:hover {
+  background: #f9fafb;
+}
+
+.student-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.monthly-panel {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.monthly-summary {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.monthly-box {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px 16px;
+}
+
+.monthly-box .label {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.monthly-box .value {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.monthly-box .value.paid {
+  color: #16a34a;
+}
+
+.monthly-box .value.remaining {
+  color: #dc2626;
+}
+
+.monthly-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.month-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #e5e7eb;
+  min-width: 60px;
+}
+
+.month-chip .month-number {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.month-chip .month-status {
+  font-size: 10px;
+  color: #374151;
+}
+
+.month-chip[data-status="PAID"] {
+  background: #dcfce7;
+}
+
+.month-chip[data-status="PAID"] .month-status {
+  color: #15803d;
+}
+
+.month-chip[data-status="PARTIALLY_PAID"] {
+  background: #fef3c7;
+}
+
+.month-chip[data-status="PARTIALLY_PAID"] .month-status {
+  color: #92400e;
+}
+
+.month-chip[data-status="OVERDUE"] {
+  background: #fee2e2;
+}
+
+.month-chip[data-status="OVERDUE"] .month-status {
+  color: #b91c1c;
+}
+
+.month-chip[data-status="PENDING"] {
+  background: #e5e7eb;
+}
+
+.payment-form {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 20px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.form-row input,
+.form-row select,
+.form-row textarea {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-family: inherit;
+}
+
+.form-error {
+  color: #dc2626;
+  margin-bottom: 8px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.receipt-card {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 20px;
+}
+
+.receipt-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.receipt-grid .label {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.receipt-grid .value {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.allocations-table,
+.payments-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.allocations-table th,
+.allocations-table td,
+.payments-table th,
+.payments-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.status-badge[data-status="COMPLETED"] {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.status-badge[data-status="PENDING"] {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge[data-status="CANCELLED"] {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.empty-payments,
+.empty-state {
+  text-align: center;
+  color: #6b7280;
+  padding: 32px 0;
+}
+
+############################################################
+# FICHIER : src\app\core\services\billing.service.ts
+############################################################
+
+import { Injectable } from '@angular/core';
+
+import {
+  HttpClient,
+  HttpParams
+} from '@angular/common/http';
+
+import {
+  Observable
+} from 'rxjs';
+
+import {
+  environment
+} from '../../../environments/environment';
+
+import {
+  GenerateScheduleRequest,
+  ScheduleGenerationResponse,
+  StudentFinancialSummary
+} from '../../shared/models/billing.model';
+
+
+@Injectable({
+  providedIn: 'root'
+})
+export class BillingService {
+
+  private readonly apiUrl =
+    `${environment.apiUrl}/billing`;
+
+
+  constructor(
+    private readonly http: HttpClient
+  ) {}
+
+
+  getSummary(
+    studentId: string,
+    academicYearId: string
+  ): Observable<StudentFinancialSummary> {
+
+    const params =
+      new HttpParams()
+        .set('academicYearId', academicYearId);
+
+
+    return this.http.get<StudentFinancialSummary>(
+      `${this.apiUrl}/students/${studentId}/summary`,
+      {
+        params
+      }
+    );
+  }
+
+
+  refreshSummary(
+    studentId: string,
+    academicYearId: string
+  ): Observable<StudentFinancialSummary> {
+
+    const params =
+      new HttpParams()
+        .set('academicYearId', academicYearId);
+
+
+    return this.http.post<StudentFinancialSummary>(
+      `${this.apiUrl}/students/${studentId}/refresh`,
+      {},
+      {
+        params
+      }
+    );
+  }
+
+
+  generateSchedule(
+    request: GenerateScheduleRequest
+  ): Observable<ScheduleGenerationResponse> {
+
+    return this.http.post<ScheduleGenerationResponse>(
+      `${this.apiUrl}/schedules/generate`,
+      request
+    );
+  }
+}
+
+############################################################
+# FICHIER : src\app\core\services\payment.service.ts
+############################################################
+
+import { Injectable } from '@angular/core';
+
+import {
+  HttpClient,
+  HttpParams
+} from '@angular/common/http';
+
+import {
+  Observable
+} from 'rxjs';
+
+import {
+  environment
+} from '../../../environments/environment';
+
+import {
+  Payment,
+  PaymentCreateRequest,
+  Receipt
+} from '../../shared/models/payment.model';
+
+
+@Injectable({
+  providedIn: 'root'
+})
+export class PaymentService {
+
+  private readonly apiUrl =
+    environment.apiUrl;
+
+
+  constructor(
+    private readonly http: HttpClient
+  ) {}
+
+
+  create(
+    request: PaymentCreateRequest
+  ): Observable<Payment> {
+
+    return this.http.post<Payment>(
+      `${this.apiUrl}/payments`,
+      request
+    );
+  }
+
+
+  getById(
+    id: string
+  ): Observable<Payment> {
+
+    return this.http.get<Payment>(
+      `${this.apiUrl}/payments/${id}`
+    );
+  }
+
+
+  getStudentPayments(
+    studentId: string,
+    academicYearId: string
+  ): Observable<Payment[]> {
+
+    const params =
+      new HttpParams()
+        .set('academicYearId', academicYearId);
+
+
+    return this.http.get<Payment[]>(
+      `${this.apiUrl}/payments/student/${studentId}`,
+      {
+        params
+      }
+    );
+  }
+
+
+  getReceipt(
+    id: string
+  ): Observable<Receipt> {
+
+    return this.http.get<Receipt>(
+      `${this.apiUrl}/receipts/${id}`
+    );
+  }
+
+
+  downloadReceiptPdf(
+    receiptId: string
+  ): Observable<Blob> {
+
+    return this.http.get(
+      `${this.apiUrl}/receipts/${receiptId}/pdf`,
+      {
+        responseType: 'blob'
+      }
+    );
+  }
+}
+
+############################################################
+# FICHIER : src\app\core\services\academic-year.service.ts
+############################################################
+
+import { Injectable } from '@angular/core';
+
+import {
+  HttpClient,
+  HttpParams
+} from '@angular/common/http';
+
+import {
+  Observable
+} from 'rxjs';
+
+import {
+  environment
+} from '../../../environments/environment';
+
+import {
+  AcademicYear
+} from '../../shared/models/academic-year.model';
+
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AcademicYearService {
+
+  private readonly apiUrl =
+    `${environment.apiUrl}/academic/years`;
+
+
+  constructor(
+    private readonly http: HttpClient
+  ) {}
+
+
+  findAll(
+    establishmentId: string
+  ): Observable<AcademicYear[]> {
+
+    const params =
+      new HttpParams()
+        .set('establishmentId', establishmentId);
+
+
+    return this.http.get<AcademicYear[]>(
+      this.apiUrl,
+      {
+        params
+      }
+    );
+  }
+}
+
+############################################################
+# FICHIER : src\app\core\services\level.service.ts
+############################################################
+
+import { Injectable } from '@angular/core';
+
+import {
+  HttpClient,
+  HttpParams
+} from '@angular/common/http';
+
+import {
+  Observable
+} from 'rxjs';
+
+import {
+  environment
+} from '../../../environments/environment';
+
+import {
+  Level
+} from '../../shared/models/level.model';
+
+
+@Injectable({
+  providedIn: 'root'
+})
+export class LevelService {
+
+  private readonly apiUrl =
+    `${environment.apiUrl}/academic/levels`;
+
+
+  constructor(
+    private readonly http: HttpClient
+  ) {}
+
+
+  findAll(
+    establishmentId: string
+  ): Observable<Level[]> {
+
+    const params =
+      new HttpParams()
+        .set('establishmentId', establishmentId);
+
+
+    return this.http.get<Level[]>(
+      this.apiUrl,
+      {
+        params
+      }
+    );
+  }
+}
+
+############################################################
+# FICHIER : src\app\core\services\school-class.service.ts
+############################################################
+
+import { Injectable } from '@angular/core';
+
+import {
+  HttpClient,
+  HttpParams
+} from '@angular/common/http';
+
+import {
+  Observable
+} from 'rxjs';
+
+import {
+  environment
+} from '../../../environments/environment';
+
+import {
+  SchoolClass
+} from '../../shared/models/school-class.model';
+
+
+@Injectable({
+  providedIn: 'root'
+})
+export class SchoolClassService {
+
+  private readonly apiUrl =
+    `${environment.apiUrl}/academic/classes`;
+
+
+  constructor(
+    private readonly http: HttpClient
+  ) {}
+
+
+  findAll(
+    establishmentId: string,
+    academicYearId: string
+  ): Observable<SchoolClass[]> {
+
+    const params =
+      new HttpParams()
+        .set('establishmentId', establishmentId)
+        .set('academicYearId', academicYearId);
+
+
+    return this.http.get<SchoolClass[]>(
+      this.apiUrl,
+      {
+        params
+      }
+    );
+  }
+}
+
+############################################################
+# FICHIER : src\app\shared\models\billing.model.ts
+############################################################
+
+export interface StudentCharge {
+
+  id: string;
+
+  studentAccountId: string;
+
+  feeStructureId: string;
+
+  feeTypeId: string;
+
+  feeTypeCode: string;
+
+  feeTypeName: string;
+
+  installmentNumber: number | null;
+
+  label: string;
+
+  amount: number;
+
+  paidAmount: number;
+
+  discountAmount: number;
+
+  remainingAmount: number;
+
+  dueDate: string;
+
+  gracePeriodDays: number | null;
+
+  status: string;
+}
+
+
+export interface StudentFinancialSummary {
+
+  studentAccountId: string;
+
+  studentId: string;
+
+  registrationNumber: string;
+
+  studentName: string;
+
+  academicYearId: string;
+
+  academicYear: string;
+
+  levelId: string | null;
+
+  level: string | null;
+
+  totalCharged: number;
+
+  totalPaid: number;
+
+  totalDiscount: number;
+
+  balance: number;
+
+  overdueChargeCount: number;
+
+  status: string;
+
+  charges: StudentCharge[];
+}
+
+
+export interface GenerateScheduleRequest {
+
+  enrollmentId: string;
+}
+
+
+export interface ScheduleGenerationResponse {
+
+  studentAccountId: string;
+
+  studentId: string;
+
+  registrationNumber: string;
+
+  createdCharges: number;
+
+  skippedCharges: number;
+
+  totalCharged: number;
+
+  balance: number;
+
+  charges: StudentCharge[];
+}
+
+############################################################
+# FICHIER : src\app\shared\models\payment.model.ts
+############################################################
+
+export interface PaymentAllocation {
+
+  allocationId: string;
+
+  chargeId: string;
+
+  feeTypeCode: string;
+
+  chargeLabel: string;
+
+  dueDate: string;
+
+  allocatedAmount: number;
+
+  remainingAmount: number;
+}
+
+
+export interface Receipt {
+
+  id: string;
+
+  receiptNumber: string;
+
+  verificationCode: string;
+
+  amount: number;
+
+  issuedAt: string;
+
+  cancelled: boolean;
+}
+
+
+export interface Payment {
+
+  id: string;
+
+  paymentNumber: string;
+
+  studentId: string;
+
+  registrationNumber: string;
+
+  studentName: string;
+
+  academicYearId: string;
+
+  amount: number;
+
+  paymentMethod: string;
+
+  status: string;
+
+  transactionReference: string | null;
+
+  notes: string | null;
+
+  paidAt: string;
+
+  receivedBy: string | null;
+
+  accountBalance: number;
+
+  allocations: PaymentAllocation[];
+
+  receipt: Receipt | null;
+}
+
+
+export interface PaymentCreateRequest {
+
+  studentId: string;
+
+  academicYearId: string;
+
+  amount: number;
+
+  paymentMethod: string;
+
+  transactionReference: string | null;
+
+  notes: string | null;
+}
+
+############################################################
+# FICHIER : src\app\shared\models\academic-year.model.ts
+############################################################
+
+export interface AcademicYear {
+
+  id: string;
+
+  establishmentId: string;
+
+  code: string;
+
+  label: string;
+
+  startDate: string;
+
+  endDate: string;
+
+  status: string;
+
+  currentYear: boolean;
+}
+
+############################################################
+# FICHIER : src\app\shared\models\level.model.ts
+############################################################
+
+export interface Level {
+
+  id: string;
+
+  establishmentId: string;
+
+  code: string;
+
+  name: string;
+
+  description: string | null;
+
+  displayOrder: number | null;
+
+  active: boolean;
+}
+
+############################################################
+# FICHIER : src\app\shared\models\school-class.model.ts
+############################################################
+
+export interface SchoolClass {
+
+  id: string;
+
+  establishmentId: string;
+
+  academicYearId: string;
+
+  academicYear: string;
+
+  levelId: string;
+
+  level: string;
+
+  code: string;
+
+  name: string;
+
+  capacity: number | null;
+
+  active: boolean;
+}
+
+############################################################
+# FICHIER : src\app\shared\models\student.model.ts
+############################################################
+
+export interface Student {
+
+  id: string;
+
+  establishmentId: string;
+
+  establishmentName: string;
+
+  registrationNumber: string;
+
+  firstName: string;
+
+  lastName: string;
+
+  gender: string;
+
+  dateOfBirth: string | null;
+
+  placeOfBirth: string | null;
+
+  nationality: string | null;
+
+  phone: string | null;
+
+  email: string | null;
+
+  address: string | null;
+
+  guardianName: string | null;
+
+  guardianPhone: string | null;
+
+  guardianEmail: string | null;
+
+  status: string;
+
+  createdAt: string;
+
+  updatedAt: string;
+}
+
+
+export interface StudentCreateRequest {
+
+  establishmentId: string;
+
+  registrationNumber: string;
+
+  firstName: string;
+
+  lastName: string;
+
+  gender: string;
+
+  dateOfBirth: string | null;
+
+  placeOfBirth: string | null;
+
+  nationality: string | null;
+
+  phone: string | null;
+
+  email: string | null;
+
+  address: string | null;
+
+  guardianName: string | null;
+
+  guardianPhone: string | null;
+
+  guardianEmail: string | null;
+}
+
+
+export interface StudentUpdateRequest {
+
+  firstName: string;
+
+  lastName: string;
+
+  gender: string;
+
+  dateOfBirth: string | null;
+
+  placeOfBirth: string | null;
+
+  nationality: string | null;
+
+  phone: string | null;
+
+  email: string | null;
+
+  address: string | null;
+
+  guardianName: string | null;
+
+  guardianPhone: string | null;
+
+  guardianEmail: string | null;
+
+  status: string;
+}
+
+
+export interface StudentPage {
+
+  content: Student[];
+
+  totalElements: number;
+
+  totalPages: number;
+
+  size: number;
+
+  number: number;
+
+  first: boolean;
+
+  last: boolean;
+
+  numberOfElements: number;
+}
+
+
+export interface Enrollment {
+
+  id: string;
+
+  studentId: string;
+
+  studentRegistrationNumber: string;
+
+  academicYearId: string;
+
+  academicYear: string;
+
+  schoolClassId: string;
+
+  schoolClass: string;
+
+  level: string;
+
+  enrollmentDate: string;
+
+  status: string;
+
+  notes: string | null;
+}
+
+
+export interface EnrollmentRequest {
+
+  academicYearId: string;
+
+  schoolClassId: string;
+
+  enrollmentDate: string | null;
+
+  notes: string | null;
+}
+
+############################################################
+# FICHIER : src\app\app.routes.ts
+############################################################
+
+import { PermissionsComponent } from './features/permissions/permissions.component';
+import { RolesComponent } from './features/roles/roles.component';
+import { Routes } from '@angular/router';
+
+import {
+  authGuard
+} from './core/guards/auth.guard';
+
+import {
+  permissionGuard
+} from './core/guards/permission.guard';
+
+
+import {
+  LoginComponent
+} from './features/login/login.component';
+
+import {
+  ForbiddenComponent
+} from './features/forbidden/forbidden.component';
+
+
+import {
+  VerifyReceiptComponent
+} from './features/verify-receipt/verify-receipt.component';
+
+
+import {
+  ActivateAccountComponent
+} from './features/activate-account/activate-account.component';
+
+import {
+  MainLayoutComponent
+} from './layout/main-layout/main-layout.component';
+
+
+import {
+  DashboardComponent
+} from './features/dashboard/dashboard.component';
+
+import {
+  StudentsComponent
+} from './features/students/students.component';
+
+import {
+  BillingComponent
+} from './features/billing/billing.component';
+
+import {
+  PaymentsComponent
+} from './features/payments/payments.component';
+
+
+import {
+  FeesComponent
+} from './features/fees/fees.component';
+
+import {
+  ExpensesComponent
+} from './features/expenses/expenses.component';
+
+import {
+  BudgetComponent
+} from './features/budget/budget.component';
+
+import {
+  AccountingComponent
+} from './features/accounting/accounting.component';
+
+import {
+  TreasuryComponent
+} from './features/treasury/treasury.component';
+
+import {
+  CashComponent
+} from './features/cash/cash.component';
+
+import {
+  BankReconciliationComponent
+} from './features/bank-reconciliation/bank-reconciliation.component';
+
+
+import {
+  SecurityComponent
+} from './features/security/security.component';
+
+
+export const routes: Routes = [
+  { path: 'permissions', component: PermissionsComponent },
+
+  {
+    path: 'login',
+    component: LoginComponent
+  },
+
+
+  {
+    path: 'forbidden',
+    component: ForbiddenComponent
+  },
+
+  {
+    path: 'verify',
+    component: VerifyReceiptComponent
+  },
+
+
+  {
+    path: 'verify/:code',
+    component: VerifyReceiptComponent
+  },
+
+
+  {
+    path: '',
+    component: MainLayoutComponent,
+
+    canActivate: [
+      authGuard
+    ],
+
+    children: [
+
+      {
+        path: '',
+        redirectTo: 'dashboard',
+        pathMatch: 'full'
+      },
+
+
+      {
+        path: 'dashboard',
+        component: DashboardComponent
+      },
+
+
+      {
+        path: 'students',
+        component: StudentsComponent
+      },
+
+
+      {
+        path: 'billing',
+        component: BillingComponent
+      },
+
+
+      {
+        path: 'payments',
+        component: PaymentsComponent
+      },
+
+
+      {
+        path: 'fees',
+        component: FeesComponent
+      },
+
+
+      {
+        path: 'expenses',
+        component: ExpensesComponent
+      },
+
+
+      {
+        path: 'budget',
+        component: BudgetComponent
+      },
+
+
+      {
+        path: 'accounting',
+
+        component:
+          AccountingComponent,
+
+        canActivate: [
+          permissionGuard
+        ],
+
+        data: {
+          permission:
+            'ACCOUNTING_READ'
+        }
+      },
+
+
+      {
+        path: 'treasury',
+
+        component:
+          TreasuryComponent,
+
+        canActivate: [
+          permissionGuard
+        ],
+
+        data: {
+          permission:
+            'ACCOUNTING_READ'
+        }
+      },
+
+
+      {
+        path: 'cash',
+
+        component:
+          CashComponent,
+
+        canActivate: [
+          permissionGuard
+        ],
+
+        data: {
+          permission:
+            'ACCOUNTING_READ'
+        }
+      },
+
+
+      {
+        path:
+          'bank-reconciliation',
+
+        component:
+          BankReconciliationComponent,
+
+        canActivate: [
+          permissionGuard
+        ],
+
+        data: {
+          permission:
+            'BANK_READ'
+        }
+      }
+
+    ]
+  },
+
+
+      {
+        path: 'security',
+
+        component:
+          SecurityComponent,
+
+        canActivate: [
+          permissionGuard
+        ],
+
+        data: {
+          permission:
+            'USER_READ'
+        }
+      },
+
+
+  {
+    path: '**',
+    redirectTo: ''
+  }
+
+];
+
+
+
+
+
