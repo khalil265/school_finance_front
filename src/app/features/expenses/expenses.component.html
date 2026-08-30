@@ -21,6 +21,19 @@
     <form [formGroup]="expenseForm" (ngSubmit)="submitExpenseForm()">
 
       <div class="form-row">
+        <label for="expenseCategoryId">Categorie de depense</label>
+        <div class="supplier-row">
+          <select id="expenseCategoryId" formControlName="expenseCategoryId">
+            <option value="" disabled>
+              {{ loadingCategories ? 'Chargement...' : 'Selectionnez une categorie...' }}
+            </option>
+            <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
+          </select>
+          <button type="button" class="secondary" (click)="openCategoryForm()">+ Categorie</button>
+        </div>
+      </div>
+
+      <div class="form-row">
         <label for="supplierId">Fournisseur (optionnel)</label>
         <div class="supplier-row">
           <select id="supplierId" formControlName="supplierId">
@@ -51,6 +64,40 @@
       <div class="form-actions">
         <button type="button" class="secondary" (click)="closeForm()" [disabled]="saving">Annuler</button>
         <button type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Creer' }}</button>
+      </div>
+
+    </form>
+
+  </div>
+
+  <div class="form-card category-card" *ngIf="categoryFormVisible">
+
+    <h3>Nouvelle categorie de depense</h3>
+
+    <form [formGroup]="categoryForm" (ngSubmit)="submitCategoryForm()">
+
+      <div class="form-grid">
+
+        <div class="form-row">
+          <label for="cCode">Code</label>
+          <input id="cCode" type="text" formControlName="code" placeholder="FOURNITURES" />
+        </div>
+
+        <div class="form-row">
+          <label for="cName">Nom</label>
+          <input id="cName" type="text" formControlName="name" placeholder="Fournitures scolaires" />
+        </div>
+
+      </div>
+
+      <div class="form-row">
+        <label for="cDescription">Description (optionnel)</label>
+        <textarea id="cDescription" formControlName="description" rows="2"></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="secondary" (click)="closeCategoryForm()" [disabled]="saving">Annuler</button>
+        <button type="submit" [disabled]="saving">{{ saving ? 'Enregistrement...' : 'Creer la categorie' }}</button>
       </div>
 
     </form>
@@ -124,6 +171,7 @@
       <thead>
         <tr>
           <th>N°</th>
+          <th>Categorie</th>
           <th>Objet</th>
           <th>Fournisseur</th>
           <th>Montant</th>
@@ -136,6 +184,7 @@
           (click)="selectExpense(expense)"
           [class.selected]="selectedExpense?.id === expense.id">
           <td>{{ expense.expenseNumber }}</td>
+          <td>{{ expense.expenseCategoryName ?? '-' }}</td>
           <td>{{ expense.subject }}</td>
           <td>{{ expense.supplierName ?? '-' }}</td>
           <td>{{ expense.amount | number: '1.0-0' }} XOF</td>
@@ -168,6 +217,11 @@
         <div>
           <span class="label">Montant</span>
           <span class="value">{{ selectedExpense.amount | number: '1.0-0' }} {{ selectedExpense.currency }}</span>
+        </div>
+
+        <div>
+          <span class="label">Categorie</span>
+          <span class="value">{{ selectedExpense.expenseCategoryName ?? '-' }}</span>
         </div>
 
         <div>

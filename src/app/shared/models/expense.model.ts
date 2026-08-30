@@ -10,6 +10,12 @@ export interface Expense {
 
   supplierName: string | null;
 
+  expenseCategoryId: string | null;
+
+  expenseCategoryCode: string | null;
+
+  expenseCategoryName: string | null;
+
   subject: string;
 
   description: string | null;
@@ -49,6 +55,8 @@ export interface ExpenseCreateRequest {
   establishmentId: string;
 
   supplierId: string | null;
+
+  expenseCategoryId: string;
 
   subject: string;
 

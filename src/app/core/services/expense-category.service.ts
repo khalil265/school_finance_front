@@ -14,17 +14,18 @@ import {
 } from '../../../environments/environment';
 
 import {
-  AcademicYear
-} from '../../shared/models/academic-year.model';
+  ExpenseCategory,
+  ExpenseCategoryCreateRequest
+} from '../../shared/models/expense-category.model';
 
 
 @Injectable({
   providedIn: 'root'
 })
-export class AcademicYearService {
+export class ExpenseCategoryService {
 
   private readonly apiUrl =
-    `${environment.apiUrl}/academic/years`;
+    `${environment.apiUrl}/expense-categories`;
 
 
   constructor(
@@ -32,20 +33,31 @@ export class AcademicYearService {
   ) {}
 
 
-  findAll(
+  list(
     establishmentId: string
-  ): Observable<AcademicYear[]> {
+  ): Observable<ExpenseCategory[]> {
 
     const params =
       new HttpParams()
         .set('establishmentId', establishmentId);
 
 
-    return this.http.get<AcademicYear[]>(
+    return this.http.get<ExpenseCategory[]>(
       this.apiUrl,
       {
         params
       }
+    );
+  }
+
+
+  create(
+    request: ExpenseCategoryCreateRequest
+  ): Observable<ExpenseCategory> {
+
+    return this.http.post<ExpenseCategory>(
+      this.apiUrl,
+      request
     );
   }
 }

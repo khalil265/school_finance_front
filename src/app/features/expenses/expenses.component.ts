@@ -35,6 +35,10 @@ import {
 } from '../../core/services/supplier.service';
 
 import {
+  ExpenseCategoryService
+} from '../../core/services/expense-category.service';
+
+import {
   AppContextService
 } from '../../core/services/app-context.service';
 
@@ -49,6 +53,10 @@ import {
 import {
   Supplier
 } from '../../shared/models/supplier.model';
+
+import {
+  ExpenseCategory
+} from '../../shared/models/expense-category.model';
 
 
 @Component({
@@ -72,6 +80,9 @@ export class ExpensesComponent implements OnInit {
   private readonly supplierService =
     inject(SupplierService);
 
+  private readonly categoryService =
+    inject(ExpenseCategoryService);
+
   private readonly appContext =
     inject(AppContextService);
 
@@ -86,12 +97,16 @@ export class ExpensesComponent implements OnInit {
 
   suppliers: Supplier[] = [];
 
+  categories: ExpenseCategory[] = [];
+
   selectedExpense: Expense | null = null;
 
 
   formVisible = false;
 
   supplierFormVisible = false;
+
+  categoryFormVisible = false;
 
   rejectFormVisible = false;
 
@@ -101,6 +116,8 @@ export class ExpensesComponent implements OnInit {
   loading = false;
 
   loadingSuppliers = false;
+
+  loadingCategories = false;
 
   saving = false;
 
@@ -118,6 +135,13 @@ export class ExpensesComponent implements OnInit {
     this.fb.nonNullable.group({
 
       supplierId: [''],
+
+      expenseCategoryId: [
+        '',
+        [
+          Validators.required
+        ]
+      ],
 
       subject: [
         '',
@@ -176,6 +200,28 @@ export class ExpensesComponent implements OnInit {
     });
 
 
+  readonly categoryForm =
+    this.fb.nonNullable.group({
+
+      code: [
+        '',
+        [
+          Validators.required
+        ]
+      ],
+
+      name: [
+        '',
+        [
+          Validators.required
+        ]
+      ],
+
+      description: ['']
+
+    });
+
+
   get canCreate(): boolean {
 
     return this.authService
@@ -202,6 +248,8 @@ export class ExpensesComponent implements OnInit {
     this.loadExpenses();
 
     this.loadSuppliers();
+
+    this.loadCategories();
   }
 
 
@@ -276,6 +324,39 @@ export class ExpensesComponent implements OnInit {
   }
 
 
+  loadCategories(): void {
+
+    this.loadingCategories = true;
+
+
+    this.categoryService
+      .list(
+        this.appContext.establishmentId()
+      )
+      .pipe(
+        finalize(() => {
+          this.loadingCategories = false;
+        })
+      )
+      .subscribe({
+
+        next: categories => {
+
+          this.categories = categories;
+        },
+
+        error: error => {
+
+          console.error(
+            'Erreur chargement categories de depenses',
+            error
+          );
+        }
+
+      });
+  }
+
+
   openCreateForm(): void {
 
     this.formError = '';
@@ -285,6 +366,8 @@ export class ExpensesComponent implements OnInit {
     this.expenseForm.reset({
 
       supplierId: '',
+
+      expenseCategoryId: '',
 
       subject: '',
 
@@ -339,6 +422,9 @@ export class ExpensesComponent implements OnInit {
         this.nullIfEmpty(
           value.supplierId
         ),
+
+      expenseCategoryId:
+        value.expenseCategoryId,
 
       subject:
         value.subject.trim(),
@@ -505,6 +591,105 @@ export class ExpensesComponent implements OnInit {
           });
 
           this.supplierFormVisible = false;
+        },
+
+        error: (error: HttpErrorResponse) => {
+
+          this.handleFormError(error);
+        }
+
+      });
+  }
+
+
+  openCategoryForm(): void {
+
+    this.formError = '';
+
+    this.categoryForm.reset({
+
+      code: '',
+
+      name: '',
+
+      description: ''
+
+    });
+
+    this.categoryFormVisible = true;
+  }
+
+
+  closeCategoryForm(): void {
+
+    if (this.saving) {
+      return;
+    }
+
+    this.categoryFormVisible = false;
+  }
+
+
+  submitCategoryForm(): void {
+
+    this.formError = '';
+
+
+    if (this.categoryForm.invalid) {
+
+      this.categoryForm.markAllAsTouched();
+
+      return;
+    }
+
+
+    this.saving = true;
+
+
+    const value =
+      this.categoryForm.getRawValue();
+
+
+    const request = {
+
+      establishmentId:
+        this.appContext.establishmentId(),
+
+      code:
+        value.code.trim(),
+
+      name:
+        value.name.trim(),
+
+      description:
+        this.nullIfEmpty(
+          value.description
+        )
+
+    };
+
+
+    this.categoryService
+      .create(request)
+      .pipe(
+        finalize(() => {
+          this.saving = false;
+        })
+      )
+      .subscribe({
+
+        next: category => {
+
+          this.categories = [
+            ...this.categories,
+            category
+          ];
+
+          this.expenseForm.patchValue({
+            expenseCategoryId: category.id
+          });
+
+          this.categoryFormVisible = false;
         },
 
         error: (error: HttpErrorResponse) => {
@@ -738,7 +923,7 @@ export class ExpensesComponent implements OnInit {
     }
 
 
-    if (error.status === 400) {
+    if (error.status === 400 || error.status === 409) {
 
       this.formError =
         error.error?.message
