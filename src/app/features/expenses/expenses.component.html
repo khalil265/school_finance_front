@@ -70,7 +70,8 @@
 
   </div>
 
-  <div class="form-card category-card" *ngIf="categoryFormVisible">
+  <div class="modal-overlay" *ngIf="categoryFormVisible" (click)="closeCategoryForm()">
+  <div class="form-card category-card modal-panel" (click)="$event.stopPropagation()">
 
     <h3>Nouvelle categorie de depense</h3>
 
@@ -103,8 +104,10 @@
     </form>
 
   </div>
+  </div>
 
-  <div class="form-card supplier-card" *ngIf="supplierFormVisible">
+  <div class="modal-overlay" *ngIf="supplierFormVisible" (click)="closeSupplierForm()">
+  <div class="form-card supplier-card modal-panel" (click)="$event.stopPropagation()">
 
     <h3>Nouveau fournisseur</h3>
 
@@ -161,6 +164,7 @@
 
     </form>
 
+  </div>
   </div>
 
   <div class="loading" *ngIf="loading">Chargement des depenses...</div>

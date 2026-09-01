@@ -71,29 +71,11 @@ export class SidebarComponent {
       icon: '\u25A5'
     },
     {
-      label: 'Comptabilite',
-      route: '/accounting',
-      icon: '\u2261',
-      section: 'COMPTABILITE',
-      permission: 'ACCOUNTING_READ'
-    },
-    {
       label: 'Tresorerie',
       route: '/treasury',
       icon: '\u25CE',
+      section: 'COMPTABILITE',
       permission: 'ACCOUNTING_READ'
-    },
-    {
-      label: 'Caisse',
-      route: '/cash',
-      icon: '\u25A3',
-      permission: 'ACCOUNTING_READ'
-    },
-    {
-      label: 'Rapprochement bancaire',
-      route: '/bank-reconciliation',
-      icon: '\u21C4',
-      permission: 'BANK_READ'
     },
     {
       label: 'Securite',

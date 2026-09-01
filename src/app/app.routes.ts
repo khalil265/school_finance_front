@@ -170,22 +170,6 @@ export const routes: Routes = [
       },
 
 
-      {
-        path: 'accounting',
-
-        component:
-          AccountingComponent,
-
-        canActivate: [
-          permissionGuard
-        ],
-
-        data: {
-          permission:
-            'ACCOUNTING_READ'
-        }
-      },
-
 
       {
         path: 'treasury',
@@ -204,39 +188,7 @@ export const routes: Routes = [
       },
 
 
-      {
-        path: 'cash',
 
-        component:
-          CashComponent,
-
-        canActivate: [
-          permissionGuard
-        ],
-
-        data: {
-          permission:
-            'ACCOUNTING_READ'
-        }
-      },
-
-
-      {
-        path:
-          'bank-reconciliation',
-
-        component:
-          BankReconciliationComponent,
-
-        canActivate: [
-          permissionGuard
-        ],
-
-        data: {
-          permission:
-            'BANK_READ'
-        }
-      }
 
     ]
   },
