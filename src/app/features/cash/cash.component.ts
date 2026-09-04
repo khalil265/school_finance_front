@@ -39,6 +39,7 @@ import {
 } from '../../core/auth/auth.service';
 
 import {
+  CaisseOption,
   CashSession,
   CashSessionDetails
 } from '../../shared/models/cash.model';
@@ -70,6 +71,19 @@ export class CashComponent implements OnInit {
 
   private readonly fb =
     inject(FormBuilder);
+
+
+  readonly caisseOptions: CaisseOption[] = [
+
+    { code: '571000', label: 'Caisse principale' },
+    { code: '571001', label: 'Caisse cantine' },
+    { code: '571002', label: 'Caisse transport' },
+    { code: '571003', label: 'Caisse activites' }
+
+  ];
+
+
+  selectedAccountCode = '571000';
 
 
   currentDetails: CashSessionDetails | null = null;
@@ -135,7 +149,27 @@ export class CashComponent implements OnInit {
   }
 
 
+  get selectedCaisseLabel(): string {
+
+    return this.caisseOptions.find(
+      c => c.code === this.selectedAccountCode
+    )?.label ?? this.selectedAccountCode;
+  }
+
+
   ngOnInit(): void {
+
+    this.loadCurrent();
+  }
+
+
+  onCaisseChange(): void {
+
+    this.currentDetails = null;
+
+    this.showHistory = false;
+
+    this.sessionHistory = [];
 
     this.loadCurrent();
   }
@@ -150,7 +184,8 @@ export class CashComponent implements OnInit {
 
     this.cashService
       .current(
-        this.appContext.establishmentId()
+        this.appContext.establishmentId(),
+        this.selectedAccountCode
       )
       .pipe(
         finalize(() => {
@@ -193,12 +228,14 @@ export class CashComponent implements OnInit {
     this.showHistory = !this.showHistory;
 
 
-    if (!this.showHistory || this.sessionHistory.length > 0) {
+    if (!this.showHistory) {
       return;
     }
 
 
     this.loadingHistory = true;
+
+    this.sessionHistory = [];
 
 
     this.cashService
@@ -214,7 +251,10 @@ export class CashComponent implements OnInit {
 
         next: sessions => {
 
-          this.sessionHistory = sessions;
+          this.sessionHistory =
+            sessions.filter(
+              s => s.accountCode === this.selectedAccountCode
+            );
         },
 
         error: error => {
@@ -280,7 +320,8 @@ export class CashComponent implements OnInit {
       establishmentId:
         this.appContext.establishmentId(),
 
-      accountCode: null,
+      accountCode:
+        this.selectedAccountCode,
 
       openingBalance:
         value.openingBalance
@@ -300,7 +341,7 @@ export class CashComponent implements OnInit {
         next: session => {
 
           this.successMessage =
-            `Session ${session.sessionNumber} ouverte avec succes.`;
+            `Session ${session.sessionNumber} ouverte avec succes pour ${this.selectedCaisseLabel}.`;
 
           this.openFormVisible = false;
 

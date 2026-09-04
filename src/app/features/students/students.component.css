@@ -674,3 +674,77 @@ tbody tr:hover {
 
     font-size: 9px;
 }
+
+
+/* ============================================================
+   PHOTO ELEVE
+   ============================================================ */
+
+.row-photo {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.details-header-with-photo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.details-photo {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: 0 0 56px;
+}
+
+.details-photo-placeholder {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    flex: 0 0 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eef2f6;
+    color: #344054;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.photo-upload-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.photo-preview {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    object-fit: cover;
+    border: 1px solid #eaecf0;
+}
+
+.photo-preview-placeholder {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f9fafb;
+    border: 1px dashed #d0d5dd;
+    color: #98a2b3;
+    font-size: 10px;
+    text-align: center;
+}
+
+.photo-upload-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}

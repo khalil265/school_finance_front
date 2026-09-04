@@ -122,6 +122,9 @@ export class StudentsComponent implements OnInit {
   generatingRegistrationNumber = false;
 
 
+  photoPreview: string | null = null;
+
+
   page = 0;
 
   pageSize = 10;
@@ -152,8 +155,6 @@ export class StudentsComponent implements OnInit {
 
   ];
 
-
-  // ---- Inscription ----
 
   enrollingStudent: Student | null = null;
 
@@ -259,6 +260,10 @@ export class StudentsComponent implements OnInit {
         ]
       ],
 
+      classNumber: [
+        null as number | null
+      ],
+
       enrollmentDate: [''],
 
       notes: ['']
@@ -353,6 +358,8 @@ export class StudentsComponent implements OnInit {
     this.formError = '';
 
     this.successMessage = '';
+
+    this.photoPreview = null;
 
     this.studentForm.reset({
 
@@ -459,6 +466,9 @@ export class StudentsComponent implements OnInit {
 
     this.successMessage = '';
 
+    this.photoPreview =
+      student.photoBase64;
+
 
     this.studentForm.patchValue({
 
@@ -530,6 +540,49 @@ export class StudentsComponent implements OnInit {
     this.editingStudent = null;
 
     this.formError = '';
+  }
+
+
+  onPhotoSelected(
+    event: Event
+  ): void {
+
+    const input =
+      event.target as HTMLInputElement;
+
+    const file =
+      input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+
+    if (file.size > 2 * 1024 * 1024) {
+
+      this.formError =
+        'La photo ne doit pas depasser 2 Mo.';
+
+      return;
+    }
+
+
+    const reader =
+      new FileReader();
+
+    reader.onload = () => {
+
+      this.photoPreview =
+        reader.result as string;
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+
+  removePhoto(): void {
+
+    this.photoPreview = null;
   }
 
 
@@ -629,7 +682,10 @@ export class StudentsComponent implements OnInit {
       guardianEmail:
         this.nullIfEmpty(
           value.guardianEmail
-        )
+        ),
+
+      photoBase64:
+        this.photoPreview
 
     };
 
@@ -732,7 +788,10 @@ export class StudentsComponent implements OnInit {
         ),
 
       status:
-        value.status
+        value.status,
+
+      photoBase64:
+        this.photoPreview
 
     };
 
@@ -949,8 +1008,6 @@ export class StudentsComponent implements OnInit {
   }
 
 
-  // ---- Inscription ----
-
   private loadEnrollmentsFor(
     student: Student
   ): void {
@@ -1000,6 +1057,8 @@ export class StudentsComponent implements OnInit {
       academicYearId: '',
 
       schoolClassId: '',
+
+      classNumber: null,
 
       enrollmentDate: '',
 
@@ -1166,6 +1225,9 @@ export class StudentsComponent implements OnInit {
 
       schoolClassId:
         value.schoolClassId,
+
+      classNumber:
+        value.classNumber,
 
       enrollmentDate:
         this.nullIfEmpty(

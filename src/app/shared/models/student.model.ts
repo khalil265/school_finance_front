@@ -34,6 +34,16 @@ export interface Student {
 
   status: string;
 
+  photoBase64: string | null;
+
+  currentAcademicYearId: string | null;
+
+  currentAcademicYearLabel: string | null;
+
+  currentClassId: string | null;
+
+  currentClassName: string | null;
+
   createdAt: string;
 
   updatedAt: string;
@@ -69,6 +79,8 @@ export interface StudentCreateRequest {
   guardianPhone: string | null;
 
   guardianEmail: string | null;
+
+  photoBase64: string | null;
 }
 
 
@@ -99,6 +111,8 @@ export interface StudentUpdateRequest {
   guardianEmail: string | null;
 
   status: string;
+
+  photoBase64: string | null;
 }
 
 
@@ -140,6 +154,8 @@ export interface Enrollment {
 
   level: string;
 
+  classNumber: number | null;
+
   enrollmentDate: string;
 
   status: string;
@@ -153,6 +169,8 @@ export interface EnrollmentRequest {
   academicYearId: string;
 
   schoolClassId: string;
+
+  classNumber: number | null;
 
   enrollmentDate: string | null;
 

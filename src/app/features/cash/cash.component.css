@@ -196,3 +196,22 @@ button:disabled {
   color: #6b7280;
   padding: 32px 0;
 }
+
+.caisse-select-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.caisse-select-row label {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.caisse-select-row select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  min-width: 220px;
+}

@@ -1,0 +1,68 @@
+<div class="page-header">
+  <h1>{{ isEdit ? 'Modifier' : 'Nouvel' }} Elève</h1>
+</div>
+
+<form [formGroup]="studentForm" (ngSubmit)="onSubmit()" class="form-container">
+  
+  <!-- Section Photo -->
+  <div class="photo-upload-section">
+    <div class="photo-preview" *ngIf="photoPreview">
+      <img [src]="photoPreview" alt="Aperçu">
+    </div>
+    <div class="photo-input">
+      <label>Photo de l'élève</label>
+      <input type="file" (change)="onPhotoSelected($event)" accept="image/*">
+    </div>
+  </div>
+
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Matricule *</label>
+      <input type="text" formControlName="registrationNumber" placeholder="Ex: MAT-001">
+    </div>
+
+    <div class="form-group">
+      <label>Prénom *</label>
+      <input type="text" formControlName="firstName">
+    </div>
+
+    <div class="form-group">
+      <label>Nom *</label>
+      <input type="text" formControlName="lastName">
+    </div>
+
+    <div class="form-group">
+      <label>Genre *</label>
+      <select formControlName="gender">
+        <option value="MALE">Masculin</option>
+        <option value="FEMALE">Féminin</option>
+      </select>
+    </div>
+
+    <!-- Si c'est une inscription, on ajoute le numéro de classe -->
+    <div class="form-group" *ngIf="!isEdit">
+      <label>N° dans la classe</label>
+      <input type="number" formControlName="classNumber" placeholder="Optionnel">
+    </div>
+  </div>
+
+  <!-- Reste des champs (Contact, Tuteur...) -->
+  <div class="form-section-title">Informations de contact & Tuteur</div>
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Téléphone Tuteur *</label>
+      <input type="text" formControlName="guardianPhone">
+    </div>
+    <div class="form-group">
+      <label>Nom du Tuteur *</label>
+      <input type="text" formControlName="guardianName">
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button type="button" class="secondary" (click)="onCancel()">Annuler</button>
+    <button type="submit" [disabled]="studentForm.invalid || saving">
+      {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
+    </button>
+  </div>
+</form>

@@ -84,3 +84,11 @@ export interface CloseCashSessionRequest {
 
   notes: string | null;
 }
+
+
+export interface CaisseOption {
+
+  code: string;
+
+  label: string;
+}

@@ -74,6 +74,7 @@
             <table>
                 <thead>
                     <tr>
+                        <th></th>
                         <th>Matricule</th>
                         <th>Eleve</th>
                         <th>Sexe</th>
@@ -88,6 +89,18 @@
                     <tr *ngFor="let student of students">
 
                         <td>
+                            <img
+                                *ngIf="student.photoBase64"
+                                [src]="student.photoBase64"
+                                class="row-photo" />
+                            <div
+                                *ngIf="!student.photoBase64"
+                                class="avatar">
+                                {{ student.firstName.charAt(0) }}{{ student.lastName.charAt(0) }}
+                            </div>
+                        </td>
+
+                        <td>
                             <strong class="registration">
                                 {{ student.registrationNumber }}
                             </strong>
@@ -95,9 +108,6 @@
 
                         <td>
                             <div class="student-cell">
-                                <div class="avatar">
-                                    {{ student.firstName.charAt(0) }}{{ student.lastName.charAt(0) }}
-                                </div>
                                 <div>
                                     <strong>{{ fullName(student) }}</strong>
                                     <span>{{ student.email || 'Aucun email' }}</span>
@@ -167,10 +177,25 @@
         <div class="details-panel" (click)="$event.stopPropagation()">
 
             <div class="details-header">
-                <div>
-                    <span class="details-label">FICHE ELEVE</span>
-                    <h3>{{ fullName(student) }}</h3>
-                    <p>{{ student.registrationNumber }}</p>
+                <div class="details-header-with-photo">
+
+                    <img
+                        *ngIf="student.photoBase64"
+                        [src]="student.photoBase64"
+                        class="details-photo" />
+
+                    <div
+                        *ngIf="!student.photoBase64"
+                        class="details-photo-placeholder">
+                        {{ student.firstName.charAt(0) }}{{ student.lastName.charAt(0) }}
+                    </div>
+
+                    <div>
+                        <span class="details-label">FICHE ELEVE</span>
+                        <h3>{{ fullName(student) }}</h3>
+                        <p>{{ student.registrationNumber }}</p>
+                    </div>
+
                 </div>
 
                 <button type="button" class="close" (click)="closeDetails()">x</button>
@@ -254,7 +279,10 @@
                     <li *ngFor="let enrollment of studentEnrollments">
                         <div>
                             <strong>{{ enrollment.academicYear }}</strong>
-                            <span>{{ enrollment.schoolClass }} ({{ enrollment.level }})</span>
+                            <span>
+                                {{ enrollment.schoolClass }} ({{ enrollment.level }})
+                                <ng-container *ngIf="enrollment.classNumber"> - N. {{ enrollment.classNumber }}</ng-container>
+                            </span>
                         </div>
                         <span class="enrollment-status" [attr.data-status]="enrollment.status">
                             {{ enrollmentStatusLabel(enrollment.status) }}
@@ -315,14 +343,46 @@
             <form [formGroup]="studentForm" (ngSubmit)="saveStudent()">
 
                 <div class="form-section">
+                    <h4>Photo</h4>
+
+                    <div class="photo-upload-row">
+
+                        <img
+                            *ngIf="photoPreview"
+                            [src]="photoPreview"
+                            class="photo-preview" />
+
+                        <div
+                            *ngIf="!photoPreview"
+                            class="photo-preview-placeholder">
+                            Aucune photo
+                        </div>
+
+                        <div class="photo-upload-actions">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                (change)="onPhotoSelected($event)" />
+                            <button
+                                type="button"
+                                class="secondary-button"
+                                *ngIf="photoPreview"
+                                (click)="removePhoto()">
+                                Retirer la photo
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="form-section">
                     <h4>Identification</h4>
 
                     <div class="form-grid">
 
                         <div class="field">
-                            <label>Matricule (genere automatiquement)</label>
-                            <input type="text" formControlName="registrationNumber" readonly>
-                            <span class="field-hint" *ngIf="generatingRegistrationNumber">Generation en cours...</span>
+                            <label>Matricule *</label>
+                            <input type="text" formControlName="registrationNumber">
                         </div>
 
                         <div class="field">
@@ -487,6 +547,11 @@
                             <span class="field-hint" *ngIf="!loadingClasses && schoolClasses.length === 0">
                                 Aucune classe disponible pour cette annee.
                             </span>
+                        </div>
+
+                        <div class="field">
+                            <label>Numero dans la classe (optionnel)</label>
+                            <input type="number" formControlName="classNumber" min="1">
                         </div>
 
                         <div class="field">

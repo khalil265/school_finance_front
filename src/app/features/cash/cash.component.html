@@ -14,10 +14,18 @@
       <button
         type="button"
         (click)="openSessionForm()"
+        [disabled]="!!currentDetails"
         *ngIf="canManage && !loading && !currentDetails">
         Ouvrir une session
       </button>
     </div>
+  </div>
+
+  <div class="caisse-select-row">
+    <label for="caisseSelect">Caisse</label>
+    <select id="caisseSelect" [(ngModel)]="selectedAccountCode" (ngModelChange)="onCaisseChange()">
+      <option *ngFor="let c of caisseOptions" [value]="c.code">{{ c.label }}</option>
+    </select>
   </div>
 
   <div class="error-banner" *ngIf="errorMessage">{{ errorMessage }}</div>
@@ -25,7 +33,7 @@
 
   <div class="form-card" *ngIf="openFormVisible">
 
-    <h3>Ouvrir une session de caisse</h3>
+    <h3>Ouvrir une session - {{ selectedCaisseLabel }}</h3>
 
     <form [formGroup]="openForm" (ngSubmit)="submitOpenForm()">
 
@@ -51,7 +59,7 @@
 
     <div class="session-header">
       <div>
-        <h2>Session {{ currentDetails.session.sessionNumber }}</h2>
+        <h2>{{ selectedCaisseLabel }} - Session {{ currentDetails.session.sessionNumber }}</h2>
         <span class="status-badge" [attr.data-status]="currentDetails.session.status">
           {{ statusLabel(currentDetails.session.status) }}
         </span>
@@ -133,7 +141,7 @@
     <table class="data-table" *ngIf="currentDetails.movements.length > 0">
       <thead>
         <tr>
-          <th>N° ecriture</th>
+          <th>N. ecriture</th>
           <th>Date</th>
           <th>Description</th>
           <th>Entree</th>
@@ -160,19 +168,19 @@
   </div>
 
   <div class="empty-state" *ngIf="!loading && !currentDetails && !openFormVisible">
-    Aucune session de caisse ouverte actuellement.
+    Aucune session ouverte actuellement pour {{ selectedCaisseLabel }}.
   </div>
 
   <div class="history-card" *ngIf="showHistory">
 
-    <h3>Historique des sessions</h3>
+    <h3>Historique des sessions - {{ selectedCaisseLabel }}</h3>
 
     <div class="loading" *ngIf="loadingHistory">Chargement de l'historique...</div>
 
     <table class="data-table" *ngIf="!loadingHistory && sessionHistory.length > 0">
       <thead>
         <tr>
-          <th>N° session</th>
+          <th>N. session</th>
           <th>Ouverture</th>
           <th>Cloture</th>
           <th>Solde theorique</th>
@@ -199,7 +207,7 @@
     </table>
 
     <div class="empty-state" *ngIf="!loadingHistory && sessionHistory.length === 0">
-      Aucune session dans l'historique.
+      Aucune session dans l'historique pour cette caisse.
     </div>
 
   </div>
