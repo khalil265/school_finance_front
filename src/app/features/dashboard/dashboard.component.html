@@ -1,4 +1,4 @@
-﻿<section
+<section
   class="dashboard"
   [class.theme-dark]="currentTheme === 'dark'"
   [class.theme-blue]="currentTheme === 'blue'">
@@ -146,6 +146,12 @@
         <small>
           Paiements élèves enregistrés
         </small>
+
+        <div class="monthly-payment-mini" (click)="toggleMonthlyDetail()">
+          <span class="mini-paid">{{ monthlyPaidCount }} a jour ce mois</span>
+          <span class="mini-unpaid">{{ monthlyUnpaidCount }} en attente</span>
+          <span class="mini-link">Voir le detail ></span>
+        </div>
 
       </div>
 
@@ -772,3 +778,45 @@
   </ng-container>
 
 </section>
+
+<!-- ============================================================
+     DETAIL PAIEMENTS DU MOIS (eleves payes / non payes)
+     ============================================================ -->
+<div class="monthly-overlay" *ngIf="showMonthlyDetail" (click)="closeMonthlyDetail()">
+
+  <div class="monthly-panel" (click)="$event.stopPropagation()">
+
+    <div class="monthly-panel-header">
+      <h3>Paiements du mois</h3>
+      <button type="button" class="monthly-close" (click)="closeMonthlyDetail()">x</button>
+    </div>
+
+    <div class="monthly-columns">
+
+      <div class="monthly-column">
+        <h4>A jour ({{ monthlyPaidCount }})</h4>
+        <ul>
+          <li *ngFor="let s of paidStudentsList">
+            {{ s.firstName }} {{ s.lastName }}
+            <span>{{ s.registrationNumber }}</span>
+          </li>
+        </ul>
+        <p *ngIf="paidStudentsList.length === 0" class="monthly-empty">Aucun eleve.</p>
+      </div>
+
+      <div class="monthly-column">
+        <h4>En attente ({{ monthlyUnpaidCount }})</h4>
+        <ul>
+          <li *ngFor="let s of unpaidStudentsList">
+            {{ s.firstName }} {{ s.lastName }}
+            <span>{{ s.registrationNumber }}</span>
+          </li>
+        </ul>
+        <p *ngIf="unpaidStudentsList.length === 0" class="monthly-empty">Aucun eleve.</p>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
