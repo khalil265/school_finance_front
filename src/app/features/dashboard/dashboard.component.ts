@@ -39,6 +39,10 @@ import {
 } from '../../core/services/billing.service';
 
 import {
+  PaymentService
+} from '../../core/services/payment.service';
+
+import {
   DashboardRecentTransaction,
   DashboardSummary
 } from '../../shared/models/dashboard.model';
@@ -75,6 +79,9 @@ export class DashboardComponent implements OnInit {
 
   private readonly billingService =
     inject(BillingService);
+
+  private readonly paymentService =
+    inject(PaymentService);
 
   loading = false;
 
@@ -203,10 +210,10 @@ export class DashboardComponent implements OnInit {
 
                 const calls =
                   eligible.map(student =>
-                    this.billingService
-                      .getSummary(student.id, currentYear.id)
+                    this.paymentService
+                      .getStudentPayments(student.id, currentYear.id)
                       .pipe(
-                        catchError(() => of(null))
+                        catchError(() => of([]))
                       )
                   );
 
@@ -226,26 +233,27 @@ export class DashboardComponent implements OnInit {
 
                     eligible.forEach((student, index) => {
 
-                      const summary =
-                        results[index];
+                      const payments =
+                        results[index] ?? [];
 
-                      const monthlyCharge =
-                        summary?.charges.find(c => {
+                      const paidThisMonth =
+                        payments.some(payment => {
 
-                          const due =
-                            new Date(c.dueDate);
+                          if (payment.status !== 'COMPLETED') {
+                            return false;
+                          }
+
+                          const paidAt =
+                            new Date(payment.paidAt);
 
                           return (
-                            due.getMonth() === currentMonth &&
-                            due.getFullYear() === currentYearNum
+                            paidAt.getMonth() === currentMonth &&
+                            paidAt.getFullYear() === currentYearNum
                           );
                         });
 
 
-                      if (
-                        monthlyCharge &&
-                        monthlyCharge.status === 'PAID'
-                      ) {
+                      if (paidThisMonth) {
 
                         paid.push(student);
 
