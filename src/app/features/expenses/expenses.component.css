@@ -895,3 +895,10 @@
   margin: 0;
   box-shadow: 0 10px 30px rgba(16, 24, 40, 0.25);
 }
+
+
+.payment-success {
+  color: #16a34a;
+  font-weight: 600;
+  margin-top: 12px;
+}

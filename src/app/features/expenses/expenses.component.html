@@ -280,7 +280,17 @@
           Rejeter
         </button>
 
+        <button
+          type="button"
+          *ngIf="selectedExpense.status === 'APPROVED' && canPay"
+          (click)="openPayForm()"
+          [disabled]="actionLoading">
+          Payer
+        </button>
+
       </div>
+
+      <p class="payment-success" *ngIf="lastPaymentResult">{{ lastPaymentResult }}</p>
 
       <div class="reject-form" *ngIf="rejectFormVisible">
 
@@ -298,6 +308,65 @@
 
     </div>
 
+  </div>
+
+  <div class="modal-overlay" *ngIf="payFormVisible" (click)="closePayForm()">
+  <div class="form-card modal-panel" (click)="$event.stopPropagation()">
+
+    <h3>Payer la depense {{ selectedExpense?.expenseNumber }}</h3>
+
+    <form [formGroup]="payForm" (ngSubmit)="submitPayForm()">
+
+      <div class="form-row">
+        <label for="paymentMethod">Mode de paiement</label>
+        <select id="paymentMethod" formControlName="paymentMethod">
+          <option value="CASH">Especes</option>
+          <option value="CHECK">Cheque</option>
+          <option value="BANK_TRANSFER">Virement bancaire</option>
+          <option value="MOBILE_MONEY">Mobile Money</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="treasuryAccountCode">Compte de tresorerie</label>
+        <select id="treasuryAccountCode" formControlName="treasuryAccountCode">
+          <option value="" disabled>
+            {{ loadingAccounts ? 'Chargement...' : 'Selectionnez...' }}
+          </option>
+          <option *ngFor="let a of treasuryAccounts" [value]="a.code">{{ a.code }} - {{ a.name }}</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="expenseAccountCode">Compte de charge</label>
+        <select id="expenseAccountCode" formControlName="expenseAccountCode">
+          <option value="" disabled>
+            {{ loadingAccounts ? 'Chargement...' : 'Selectionnez...' }}
+          </option>
+          <option *ngFor="let a of expenseAccounts" [value]="a.code">{{ a.code }} - {{ a.name }}</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="paymentReference">Reference (optionnel)</label>
+        <input id="paymentReference" type="text" formControlName="paymentReference" />
+      </div>
+
+      <div class="form-row">
+        <label for="payNotes">Notes (optionnel)</label>
+        <textarea id="payNotes" formControlName="notes" rows="2"></textarea>
+      </div>
+
+      <p class="form-error" *ngIf="formError">{{ formError }}</p>
+
+      <div class="form-actions">
+        <button type="button" class="secondary" (click)="closePayForm()" [disabled]="actionLoading">Annuler</button>
+        <button type="submit" [disabled]="actionLoading">{{ actionLoading ? 'Enregistrement...' : 'Confirmer le paiement' }}</button>
+      </div>
+
+    </form>
+
+  </div>
   </div>
 
 </div>

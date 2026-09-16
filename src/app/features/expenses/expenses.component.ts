@@ -39,6 +39,14 @@ import {
 } from '../../core/services/expense-category.service';
 
 import {
+  ExpensePaymentService
+} from '../../core/services/expense-payment.service';
+
+import {
+  AccountingService
+} from '../../core/services/accounting.service';
+
+import {
   AppContextService
 } from '../../core/services/app-context.service';
 
@@ -57,6 +65,14 @@ import {
 import {
   ExpenseCategory
 } from '../../shared/models/expense-category.model';
+
+import {
+  PayExpenseRequest
+} from '../../shared/models/expense-payment.model';
+
+import {
+  AccountingAccount
+} from '../../shared/models/accounting.model';
 
 
 @Component({
@@ -83,6 +99,12 @@ export class ExpensesComponent implements OnInit {
   private readonly categoryService =
     inject(ExpenseCategoryService);
 
+  private readonly paymentService =
+    inject(ExpensePaymentService);
+
+  private readonly accountingService =
+    inject(AccountingService);
+
   private readonly appContext =
     inject(AppContextService);
 
@@ -108,9 +130,20 @@ export class ExpensesComponent implements OnInit {
 
   categoryFormVisible = false;
 
+  payFormVisible = false;
+
   rejectFormVisible = false;
 
   rejectReason = '';
+
+
+  treasuryAccounts: AccountingAccount[] = [];
+
+  expenseAccounts: AccountingAccount[] = [];
+
+  loadingAccounts = false;
+
+  lastPaymentResult: string | null = null;
 
 
   loading = false;
@@ -222,6 +255,37 @@ export class ExpensesComponent implements OnInit {
     });
 
 
+  readonly payForm =
+    this.fb.nonNullable.group({
+
+      paymentMethod: [
+        'BANK_TRANSFER',
+        [
+          Validators.required
+        ]
+      ],
+
+      paymentReference: [''],
+
+      treasuryAccountCode: [
+        '',
+        [
+          Validators.required
+        ]
+      ],
+
+      expenseAccountCode: [
+        '',
+        [
+          Validators.required
+        ]
+      ],
+
+      notes: ['']
+
+    });
+
+
   get canCreate(): boolean {
 
     return this.authService
@@ -240,6 +304,13 @@ export class ExpensesComponent implements OnInit {
 
     return this.authService
       .hasPermission('EXPENSE_APPROVE');
+  }
+
+
+  get canPay(): boolean {
+
+    return this.authService
+      .hasPermission('EXPENSE_PAY');
   }
 
 
@@ -824,6 +895,211 @@ export class ExpensesComponent implements OnInit {
         error: error => {
 
           this.handleActionError(error);
+        }
+
+      });
+  }
+
+
+  openPayForm(): void {
+
+    if (!this.selectedExpense) {
+      return;
+    }
+
+
+    this.formError = '';
+
+    this.lastPaymentResult = null;
+
+    this.payForm.reset({
+
+      paymentMethod: 'BANK_TRANSFER',
+
+      paymentReference: '',
+
+      treasuryAccountCode: '',
+
+      expenseAccountCode: '',
+
+      notes: ''
+
+    });
+
+    this.payFormVisible = true;
+
+
+    if (this.treasuryAccounts.length === 0) {
+
+      this.loadAccountsForPayment();
+    }
+  }
+
+
+  private loadAccountsForPayment(): void {
+
+    this.loadingAccounts = true;
+
+
+    this.accountingService
+      .listAccounts(
+        this.appContext.establishmentId()
+      )
+      .pipe(
+        finalize(() => {
+          this.loadingAccounts = false;
+        })
+      )
+      .subscribe({
+
+        next: accounts => {
+
+          this.treasuryAccounts =
+            accounts.filter(
+              a => a.accountType === 'ASSET'
+            );
+
+          this.expenseAccounts =
+            accounts.filter(
+              a => a.accountType === 'EXPENSE'
+            );
+        },
+
+        error: error => {
+
+          console.error(
+            'Erreur chargement plan comptable',
+            error
+          );
+
+          this.formError =
+            'Impossible de charger le plan comptable.';
+        }
+
+      });
+  }
+
+
+  closePayForm(): void {
+
+    if (this.actionLoading) {
+      return;
+    }
+
+    this.payFormVisible = false;
+
+    this.formError = '';
+  }
+
+
+  submitPayForm(): void {
+
+    if (!this.selectedExpense) {
+      return;
+    }
+
+
+    this.formError = '';
+
+
+    if (this.payForm.invalid) {
+
+      this.payForm.markAllAsTouched();
+
+      return;
+    }
+
+
+    const value =
+      this.payForm.getRawValue();
+
+
+    const expenseAccount =
+      this.expenseAccounts.find(
+        a => a.code === value.expenseAccountCode
+      );
+
+    if (!expenseAccount) {
+
+      this.formError =
+        'Compte de charge introuvable.';
+
+      return;
+    }
+
+
+    this.actionLoading = true;
+
+
+    const request: PayExpenseRequest = {
+
+      paymentMethod:
+        value.paymentMethod,
+
+      paymentReference:
+        this.nullIfEmpty(
+          value.paymentReference
+        ),
+
+      treasuryAccountCode:
+        value.treasuryAccountCode,
+
+      expenseAccountCode:
+        value.expenseAccountCode,
+
+      expenseAccountName:
+        expenseAccount.name,
+
+      notes:
+        this.nullIfEmpty(
+          value.notes
+        )
+
+    };
+
+
+    this.paymentService
+      .pay(
+        this.selectedExpense.id,
+        request
+      )
+      .pipe(
+        finalize(() => {
+          this.actionLoading = false;
+        })
+      )
+      .subscribe({
+
+        next: result => {
+
+          this.lastPaymentResult =
+            `Paiement ${result.paymentNumber} enregistre avec succes.`;
+
+          this.payFormVisible = false;
+
+          this.selectedExpense = {
+            ...this.selectedExpense!,
+            status: result.expenseStatus
+          };
+
+          this.expenses =
+            this.expenses.map(e =>
+              e.id === this.selectedExpense!.id
+                ? this.selectedExpense!
+                : e
+            );
+        },
+
+        error: (error: HttpErrorResponse) => {
+
+          console.error(
+            'Erreur paiement depense',
+            error
+          );
+
+          this.formError =
+            error.error?.message
+            ?? "Impossible d'enregistrer le paiement.";
         }
 
       });
