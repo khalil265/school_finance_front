@@ -954,15 +954,22 @@ export class ExpensesComponent implements OnInit {
 
         next: accounts => {
 
-          this.treasuryAccounts =
+          const usableAccounts =
             accounts.filter(
+              a => a.postingAllowed === true
+            );
+
+          this.treasuryAccounts =
+            usableAccounts.filter(
               a => a.accountType === 'ASSET'
             );
 
           this.expenseAccounts =
-            accounts.filter(
+            usableAccounts.filter(
               a => a.accountType === 'EXPENSE'
             );
+
+          this.autoSelectAccounts();
         },
 
         error: error => {
@@ -977,6 +984,71 @@ export class ExpensesComponent implements OnInit {
         }
 
       });
+  }
+
+
+  private autoSelectAccounts(): void {
+
+    const method =
+      this.payForm.controls.paymentMethod.value;
+
+
+    let treasuryMatch =
+      method === 'CASH'
+        ? this.treasuryAccounts.find(a =>
+            a.code.startsWith('57') ||
+            a.name.toLowerCase().includes('caisse')
+          )
+        : this.treasuryAccounts.find(a =>
+            a.code.startsWith('52') ||
+            a.name.toLowerCase().includes('banque')
+          );
+
+    if (!treasuryMatch) {
+
+      treasuryMatch =
+        this.treasuryAccounts[0];
+    }
+
+
+    if (treasuryMatch) {
+
+      this.payForm.patchValue({
+        treasuryAccountCode: treasuryMatch.code
+      });
+    }
+
+
+    if (
+      this.selectedExpense?.expenseCategoryName
+    ) {
+
+      const categoryWords =
+        this.selectedExpense.expenseCategoryName
+          .toLowerCase()
+          .split(' ');
+
+      const expenseMatch =
+        this.expenseAccounts.find(a =>
+          categoryWords.some(word =>
+            word.length > 3 &&
+            a.name.toLowerCase().includes(word)
+          )
+        );
+
+      if (expenseMatch) {
+
+        this.payForm.patchValue({
+          expenseAccountCode: expenseMatch.code
+        });
+      }
+    }
+  }
+
+
+  onPaymentMethodChange(): void {
+
+    this.autoSelectAccounts();
   }
 
 

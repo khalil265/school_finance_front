@@ -319,7 +319,7 @@
 
       <div class="form-row">
         <label for="paymentMethod">Mode de paiement</label>
-        <select id="paymentMethod" formControlName="paymentMethod">
+        <select id="paymentMethod" formControlName="paymentMethod" (change)="onPaymentMethodChange()">
           <option value="CASH">Especes</option>
           <option value="CHECK">Cheque</option>
           <option value="BANK_TRANSFER">Virement bancaire</option>
@@ -329,6 +329,7 @@
 
       <div class="form-row">
         <label for="treasuryAccountCode">Compte de tresorerie</label>
+        <span class="field-hint">Pre-selectionne automatiquement selon le mode de paiement.</span>
         <select id="treasuryAccountCode" formControlName="treasuryAccountCode">
           <option value="" disabled>
             {{ loadingAccounts ? 'Chargement...' : 'Selectionnez...' }}
