@@ -257,15 +257,7 @@
 
         <button
           type="button"
-          *ngIf="selectedExpense.status === 'SUBMITTED' && canVerify"
-          (click)="verifyExpenseAction()"
-          [disabled]="actionLoading">
-          Verifier
-        </button>
-
-        <button
-          type="button"
-          *ngIf="(selectedExpense.status === 'VERIFIED' || selectedExpense.status === 'BUDGET_CHECKED') && canApprove"
+          *ngIf="(selectedExpense.status === 'SUBMITTED' || selectedExpense.status === 'VERIFIED' || selectedExpense.status === 'BUDGET_CHECKED') && canApprove"
           (click)="approveExpenseAction()"
           [disabled]="actionLoading">
           Approuver
@@ -274,7 +266,7 @@
         <button
           type="button"
           class="danger"
-          *ngIf="(selectedExpense.status === 'SUBMITTED' || selectedExpense.status === 'VERIFIED' || selectedExpense.status === 'BUDGET_CHECKED') && (canVerify || canApprove)"
+          *ngIf="(selectedExpense.status === 'SUBMITTED' || selectedExpense.status === 'VERIFIED' || selectedExpense.status === 'BUDGET_CHECKED') && canApprove"
           (click)="openRejectForm()"
           [disabled]="actionLoading">
           Rejeter
