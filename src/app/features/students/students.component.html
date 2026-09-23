@@ -313,6 +313,14 @@
                     Inscrire
                 </button>
 
+                <button
+                    *ngIf="canUpdate"
+                    type="button"
+                    class="danger-button"
+                    (click)="deleteStudent(student)">
+                    Supprimer
+                </button>
+
             </div>
 
         </div>

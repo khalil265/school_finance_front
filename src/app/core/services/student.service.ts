@@ -113,6 +113,16 @@ export class StudentService {
   }
 
 
+  delete(
+    id: string
+  ): Observable<void> {
+
+    return this.http.delete<void>(
+      `${this.apiUrl}/${id}`
+    );
+  }
+
+
   getEnrollments(
     studentId: string
   ): Observable<Enrollment[]> {

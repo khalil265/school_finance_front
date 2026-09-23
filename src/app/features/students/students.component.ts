@@ -942,6 +942,79 @@ export class StudentsComponent implements OnInit {
   }
 
 
+  deleteStudent(
+    student: Student
+  ): void {
+
+    const confirmed =
+      window.confirm(
+        `Supprimer definitivement ${this.fullName(student)} (${student.registrationNumber}) ? Cette action est irreversible.`
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+
+    this.errorMessage = '';
+
+    this.successMessage = '';
+
+
+    this.studentService
+      .delete(student.id)
+      .subscribe({
+
+        next: () => {
+
+          this.successMessage =
+            `Eleve ${student.registrationNumber} supprime avec succes.`;
+
+          if (
+            this.selectedStudent?.id === student.id
+          ) {
+
+            this.closeDetails();
+          }
+
+          this.loadStudents();
+        },
+
+        error: (error: HttpErrorResponse) => {
+
+          console.error(
+            'Erreur suppression eleve',
+            error
+          );
+
+
+          if (error.status === 409) {
+
+            this.errorMessage =
+              error.error?.message
+              ?? "Impossible de supprimer cet eleve car il possede des donnees associees.";
+
+            return;
+          }
+
+
+          if (error.status === 403) {
+
+            this.errorMessage =
+              'Vous ne disposez pas des droits necessaires.';
+
+            return;
+          }
+
+
+          this.errorMessage =
+            "Impossible de supprimer l'eleve.";
+        }
+
+      });
+  }
+
+
   fullName(
     student: Student
   ): string {
