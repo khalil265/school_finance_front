@@ -55,7 +55,7 @@ export class SidebarComponent {
       icon: '\u25C6'
     },
     {
-      label: 'Frais',
+      label: 'Frais de scolarite',
       route: '/fees',
       icon: '$',
       permission: 'BUDGET_READ'
