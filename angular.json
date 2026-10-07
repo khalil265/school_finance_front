@@ -16,6 +16,8 @@
             "outputPath": "dist/school-finance-frontend",
             "index": "src/index.html",
             "browser": "src/main.ts",
+            "ssr": false,
+            "prerender": false,
             "polyfills": [
               "zone.js"
             ],
