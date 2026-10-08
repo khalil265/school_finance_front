@@ -1,5 +1,5 @@
 export const environment = {
-  production: true,
-  apiUrl: 'https://school-finance-backend-rahj.onrender.com/actuator/health'
+  production: false,
+  apiUrl: 'https://school-finance-backend-rahj.onrender.com/api/v1'
 };
 

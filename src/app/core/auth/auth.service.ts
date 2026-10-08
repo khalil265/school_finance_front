@@ -73,10 +73,16 @@ export class AuthService {
     request: LoginRequest
   ): Observable<LoginResponse> {
 
+    // On s'assure d'envoyer uniquement un objet propre avec username et password
+    const payload = {
+      username: request.username?.trim(),
+      password: request.password
+    };
+
     return this.http
       .post<LoginResponse>(
         `${environment.apiUrl}/auth/login`,
-        request
+        payload
       )
       .pipe(
         tap(response =>
@@ -174,11 +180,13 @@ export class AuthService {
       return;
     }
 
+    // Gestion de secours si expiresIn est absente ou vaut 0 (défaut : 24h = 86400s)
+    const expiresInSeconds = response.expiresIn || 86400;
 
     const expiresAt =
       Date.now()
       +
-      response.expiresIn * 1000;
+      expiresInSeconds * 1000;
 
 
     localStorage.setItem(
@@ -250,7 +258,7 @@ export class AuthService {
       );
 
 
-    if (!expiresAt) {
+    if (!expiresAt || isNaN(Number(expiresAt))) {
       return true;
     }
 

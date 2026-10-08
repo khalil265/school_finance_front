@@ -54,8 +54,7 @@ export class LoginComponent {
       password: [
         '',
         [
-          Validators.required,
-          Validators.minLength(8)
+          Validators.required // Supression de minLength(8) pour autoriser tous les mots de passe existants
         ]
       ]
 
@@ -67,7 +66,6 @@ export class LoginComponent {
     this.errorMessage = '';
 
     if (this.form.invalid) {
-
       this.form.markAllAsTouched();
       return;
     }
@@ -84,7 +82,6 @@ export class LoginComponent {
       .subscribe({
 
         next: () => {
-
           this.router.navigate(['/dashboard']);
         },
 
@@ -95,7 +92,7 @@ export class LoginComponent {
             error
           );
 
-          if (error.status === 401) {
+          if (error.status === 401 || error.status === 400) {
 
             this.errorMessage =
               'Nom utilisateur ou mot de passe incorrect.';
