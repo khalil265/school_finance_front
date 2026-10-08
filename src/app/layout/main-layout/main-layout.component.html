@@ -1,15 +1,22 @@
-<div class="app-shell">
+<div
+  class="app-shell"
+  [class.mobile-menu-open]="mobileMenuOpen()">
 
-    <app-sidebar></app-sidebar>
+  <div
+    class="sidebar-backdrop"
+    (click)="closeMobileMenu()">
+  </div>
 
-    <div class="main-area">
+  <app-sidebar></app-sidebar>
 
-        <app-header></app-header>
+  <div class="main-area">
+    <app-header
+      (menuToggle)="toggleMobileMenu()">
+    </app-header>
 
-        <main class="page-content">
-            <router-outlet></router-outlet>
-        </main>
-
-    </div>
+    <main class="page-content" (click)="closeMobileMenu()">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
 
 </div>

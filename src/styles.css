@@ -1,94 +1,90 @@
-* {
-    box-sizing: border-box;
+
+/* =========================================
+   SCHOOL FINANCE - STYLES GLOBAUX
+   ========================================= */
+
+:root {
+  --sf-primary: #172033;
+  --sf-primary-hover: #25334c;
+  --sf-text: #101828;
+  --sf-muted: #667085;
+  --sf-border: #eaecf0;
+  --sf-background: #f4f6f9;
+  --sf-surface: #ffffff;
+  --sf-green: #027a48;
+  --sf-red: #b42318;
+  --sf-blue: #175cd3;
+  --sf-purple: #5925dc;
+  --sf-radius: 12px;
+  --sf-shadow: 0 1px 3px rgba(16, 24, 40, .06);
 }
 
-html,
-body {
-    margin: 0;
-    padding: 0;
-    min-height: 100%;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
 }
 
 body {
-    min-height: 100vh;
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  color: var(--sf-text);
+  background: var(--sf-background);
+  -webkit-font-smoothing: antialiased;
+}
 
-    font-family:
-        Inter,
-        "Segoe UI",
-        Arial,
-        sans-serif;
-
-    background: #f4f6f9;
-    color: #101828;
+app-root {
+  display: block;
+  min-height: 100vh;
 }
 
 button,
 input,
 select,
 textarea {
-    font: inherit;
-}
-/* SCHOOL FINANCE AUTO SIDEBAR */
-
-/* Repli automatique du menu latéral */
-
-@media (min-width: 1000px) {
-
-    body.sidebar-collapsed aside.sidebar,
-    body.sidebar-collapsed .sidebar,
-    body.sidebar-collapsed .app-sidebar,
-    body.sidebar-collapsed .layout-sidebar {
-        width: 76px !important;
-        min-width: 76px !important;
-        transition: width .25s ease;
-        overflow-x: hidden;
-    }
-
-    body.sidebar-collapsed aside.sidebar span,
-    body.sidebar-collapsed .sidebar span,
-    body.sidebar-collapsed .app-sidebar span,
-    body.sidebar-collapsed .layout-sidebar span {
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity .15s ease;
-    }
-
-    body.sidebar-collapsed aside.sidebar .logo,
-    body.sidebar-collapsed .sidebar .logo {
-        justify-content: center;
-    }
-
-    body.sidebar-collapsed aside.sidebar:hover,
-    body.sidebar-collapsed .sidebar:hover,
-    body.sidebar-collapsed .app-sidebar:hover,
-    body.sidebar-collapsed .layout-sidebar:hover {
-        width: 260px !important;
-        min-width: 260px !important;
-        z-index: 1000;
-        box-shadow: 8px 0 25px rgba(16,24,40,.12);
-    }
-
-    body.sidebar-collapsed aside.sidebar:hover span,
-    body.sidebar-collapsed .sidebar:hover span,
-    body.sidebar-collapsed .app-sidebar:hover span,
-    body.sidebar-collapsed .layout-sidebar:hover span {
-        opacity: 1;
-        visibility: visible;
-    }
-
+  font: inherit;
 }
 
-/* Sur petits écrans : menu réduit automatiquement */
-
-@media (max-width: 999px) {
-
-    aside.sidebar,
-    .sidebar,
-    .app-sidebar,
-    .layout-sidebar {
-        width: 76px !important;
-        min-width: 76px !important;
-    }
-
+button {
+  -webkit-tap-highlight-color: transparent;
 }
 
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(23, 92, 211, .35);
+  outline-offset: 2px;
+}
+
+img,
+svg,
+canvas {
+  max-width: 100%;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

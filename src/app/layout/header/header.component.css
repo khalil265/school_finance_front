@@ -133,3 +133,61 @@
 .logout:hover {
     background: #f9fafb;
 }
+.mobile-menu-button {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  background: white;
+  color: #172033;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .mobile-menu-button {
+    display: inline-flex;
+  }
+
+  .title-zone {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .title-zone h1 {
+    font-size: 15px;
+  }
+
+  .title-zone p {
+    font-size: 10px;
+  }
+
+  .right-zone {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .user {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .user strong {
+    overflow-wrap: anywhere;
+  }
+
+  .logout {
+    margin-left: auto;
+  }
+}
